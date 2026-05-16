@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Icons } from '@/components/shared/icons';
 import {
   PortalCard, StatCard, StatusBadge, PortalButton, Avatar,
+  PortalInput, PortalSelect, PortalTextarea,
   fmtTL, fmtDate, fmtDay, relTime,
 } from '@/components/portal/ui';
 import { EVENT_COLORS, type PortalState } from '@/lib/portal-data';
@@ -441,8 +442,37 @@ export function WeekView({ cursor, items }: { cursor: Date; items: any[] }) {
 }
 
 // ============ Addresses ============
+const emptyAddr = { label: '', type: 'office', address: '', city: 'İstanbul', contactName: '', contactPhone: '' };
+
 export function PortalAddresses({ state }: { state: PortalState }) {
   const addresses = state.addresses || [];
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ ...emptyAddr });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const upd = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const save = async () => {
+    setBusy(true); setError('');
+    try {
+      const res = await fetch('/api/portal/adres', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error || 'Adres eklenemedi.'); return; }
+      window.location.reload();
+    } catch { setError('Bağlantı hatası.'); } finally { setBusy(false); }
+  };
+
+  const remove = async (id: string) => {
+    if (!window.confirm('Bu adresi silmek istediğinize emin misiniz?')) return;
+    try {
+      const res = await fetch('/api/portal/adres?id=' + encodeURIComponent(id), { method: 'DELETE' });
+      if (res.ok) window.location.reload();
+    } catch { /* yoksay */ }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
@@ -451,8 +481,34 @@ export function PortalAddresses({ state }: { state: PortalState }) {
             Şirket adresleriniz, şubeleriniz ve düzenli teslimat yaptığınız müşterilerinizi tek yerden yönetin. Sipariş oluştururken bu listeden hızlıca seçim yapabilirsiniz.
           </p>
         </div>
-        <PortalButton variant="primary" icon={<Icons.Plus size={14} />}>Yeni Adres</PortalButton>
+        <PortalButton variant="primary" icon={<Icons.Plus size={14} />} onClick={() => { setForm({ ...emptyAddr }); setShowForm(v => !v); }}>
+          {showForm ? 'Vazgeç' : 'Yeni Adres'}
+        </PortalButton>
       </div>
+
+      {showForm && (
+        <PortalCard padding={24}>
+          <h3 className="serif" style={{ fontSize: 18, fontWeight: 500, marginBottom: 18 }}>Yeni Adres</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="form2">
+            <PortalInput label="Etiket" required value={form.label} onChange={e => upd('label', e.target.value)} placeholder="Genel Merkez" />
+            <PortalSelect label="Tür" value={form.type} onChange={e => upd('type', e.target.value)}
+              options={[{ value: 'office', label: 'Ofis' }, { value: 'branch', label: 'Şube' }, { value: 'client', label: 'Müşteri' }]} />
+            <div style={{ gridColumn: 'span 2' }}><PortalInput label="Adres" required value={form.address} onChange={e => upd('address', e.target.value)} placeholder="Mahalle, sokak, no" /></div>
+            <PortalSelect label="Şehir" value={form.city} onChange={e => upd('city', e.target.value)} options={['İstanbul', 'Ankara', 'İzmir', 'Antalya', 'Bursa']} />
+            <PortalInput label="İletişim Kişisi" value={form.contactName} onChange={e => upd('contactName', e.target.value)} />
+            <PortalInput label="İletişim Telefonu" value={form.contactPhone} onChange={e => upd('contactPhone', e.target.value)} placeholder="+90" />
+          </div>
+          {error && <div style={{ marginTop: 14, padding: '10px 14px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 13 }}>{error}</div>}
+          <div style={{ marginTop: 18, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <PortalButton variant="ghost" onClick={() => setShowForm(false)}>İptal</PortalButton>
+            <PortalButton variant="primary" onClick={save} disabled={busy}>{busy ? 'Kaydediliyor…' : 'Kaydet'}</PortalButton>
+          </div>
+        </PortalCard>
+      )}
+
+      {addresses.length === 0 && !showForm && (
+        <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-60)' }}>Henüz adres eklenmemiş.</div>
+      )}
 
       <PortalCard padding={0}>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1.5fr 1fr 60px', padding: '14px 24px', borderBottom: '1px solid var(--line)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-60)', fontWeight: 500, gap: 16 }}>
@@ -484,9 +540,8 @@ export function PortalAddresses({ state }: { state: PortalState }) {
               <div className="serif" style={{ fontSize: 22, color: 'var(--accent)' }}>{a.usage}</div>
               <div style={{ fontSize: 11, color: 'var(--ink-40)' }}>teslimat</div>
             </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button style={{ padding: 6, color: 'var(--ink-60)' }}><Icons.Settings size={15} /></button>
-              <button style={{ padding: 6, color: 'var(--ink-60)' }}><Icons.Trash size={15} /></button>
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+              <button onClick={() => remove(a.id)} title="Sil" style={{ padding: 6, color: 'var(--ink-60)', background: 'transparent', border: 'none', cursor: 'pointer' }}><Icons.Trash size={15} /></button>
             </div>
           </div>
         ))}
@@ -509,8 +564,37 @@ export function PortalAddresses({ state }: { state: PortalState }) {
 }
 
 // ============ Employees ============
+const emptyEmp = { fullName: '', department: '', email: '', birthDate: '', startDate: '', notes: '' };
+
 export function PortalEmployees({ state }: { state: PortalState }) {
   const employees = state.employees || [];
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ ...emptyEmp });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const upd = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const save = async () => {
+    setBusy(true); setError('');
+    try {
+      const res = await fetch('/api/portal/calisan', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error || 'Çalışan eklenemedi.'); return; }
+      window.location.reload();
+    } catch { setError('Bağlantı hatası.'); } finally { setBusy(false); }
+  };
+
+  const remove = async (id: string) => {
+    if (!window.confirm('Bu çalışanı silmek istediğinize emin misiniz?')) return;
+    try {
+      const res = await fetch('/api/portal/calisan?id=' + encodeURIComponent(id), { method: 'DELETE' });
+      if (res.ok) window.location.reload();
+    } catch { /* yoksay */ }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
@@ -519,34 +603,57 @@ export function PortalEmployees({ state }: { state: PortalState }) {
             Çalışan doğum günleri, işe başlama tarihleri ve özel günler — GAIA otomatik olarak yaklaşan tarihlerde hatırlatır ve hediye önerisi sunar.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <PortalButton variant="ghost" icon={<Icons.Upload size={14} />}>CSV İçeri Al</PortalButton>
-          <PortalButton variant="primary" icon={<Icons.Plus size={14} />}>Yeni Çalışan</PortalButton>
-        </div>
+        <PortalButton variant="primary" icon={<Icons.Plus size={14} />} onClick={() => { setForm({ ...emptyEmp }); setShowForm(v => !v); }}>
+          {showForm ? 'Vazgeç' : 'Yeni Çalışan'}
+        </PortalButton>
       </div>
+
+      {showForm && (
+        <PortalCard padding={24}>
+          <h3 className="serif" style={{ fontSize: 18, fontWeight: 500, marginBottom: 18 }}>Yeni Çalışan</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="form2">
+            <PortalInput label="Ad Soyad" required value={form.fullName} onChange={e => upd('fullName', e.target.value)} />
+            <PortalInput label="Departman / Görev" value={form.department} onChange={e => upd('department', e.target.value)} />
+            <PortalInput label="E-posta" type="email" value={form.email} onChange={e => upd('email', e.target.value)} />
+            <PortalInput label="Doğum Tarihi" type="date" value={form.birthDate} onChange={e => upd('birthDate', e.target.value)} />
+            <PortalInput label="İşe Başlama" type="date" value={form.startDate} onChange={e => upd('startDate', e.target.value)} />
+          </div>
+          {error && <div style={{ marginTop: 14, padding: '10px 14px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 13 }}>{error}</div>}
+          <div style={{ marginTop: 18, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <PortalButton variant="ghost" onClick={() => setShowForm(false)}>İptal</PortalButton>
+            <PortalButton variant="primary" onClick={save} disabled={busy}>{busy ? 'Kaydediliyor…' : 'Kaydet'}</PortalButton>
+          </div>
+        </PortalCard>
+      )}
+
+      {employees.length === 0 && !showForm && (
+        <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-60)' }}>Henüz çalışan eklenmemiş.</div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
         {employees.map(e => {
           const today = new Date();
-          const [bm, bd] = e.birthday.split('-').map(Number);
-          const thisYearBday = new Date(today.getFullYear(), bm - 1, bd);
+          const [bm, bd] = (e.birthday || '').split('-').map(Number);
+          const hasBday = Number.isFinite(bm) && Number.isFinite(bd);
+          const thisYearBday = new Date(today.getFullYear(), (bm || 1) - 1, bd || 1);
           if (thisYearBday < today) thisYearBday.setFullYear(today.getFullYear() + 1);
           const days = Math.ceil((thisYearBday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          const upcoming = days <= 30;
+          const upcoming = hasBday && days <= 30;
 
           return (
             <PortalCard key={e.id} padding={20}>
-              <div style={{ display: 'flex', gap: 14 }}>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                 <Avatar name={e.name} size={48} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 2 }}>{e.role}</div>
                 </div>
+                <button onClick={() => remove(e.id)} title="Sil" style={{ padding: 4, color: 'var(--ink-40)', background: 'transparent', border: 'none', cursor: 'pointer' }}><Icons.Trash size={14} /></button>
               </div>
               <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5 }}>
                   <span style={{ color: 'var(--ink-60)' }}>🎂 Doğum günü</span>
-                  <span style={{ fontWeight: 500 }}>{thisYearBday.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}</span>
+                  <span style={{ fontWeight: 500 }}>{hasBday ? thisYearBday.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) : '—'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5 }}>
                   <span style={{ color: 'var(--ink-60)' }}>İş başlangıcı</span>
@@ -570,27 +677,29 @@ export function PortalEmployees({ state }: { state: PortalState }) {
 export function PortalBilling({ state }: { state: PortalState }) {
   const orders = state.orders || [];
   const budget = 50000;
-  const used = orders.filter(o => o.date.startsWith('2026-05')).reduce((s, o) => s + o.amount, 0);
-  const pct = Math.min(100, (used / budget) * 100);
+  const now = new Date();
+  const year = now.getFullYear();
+  const curMonthKey = `${year}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const used = orders.filter(o => (o.date || '').startsWith(curMonthKey)).reduce((s, o) => s + o.amount, 0);
+  const pct = budget > 0 ? Math.min(100, (used / budget) * 100) : 0;
 
-  const months = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-  const monthly = months.map((m, i) => ({
-    name: m.slice(0, 3),
-    val: i === 4 ? used : Math.round((Math.sin(i * 1.3) + 1.5) * 18000),
-  }));
-  const max = Math.max(...monthly.map(m => m.val));
+  const monthNames = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+  const monthly = monthNames.map((name, i) => {
+    const key = `${year}-${String(i + 1).padStart(2, '0')}`;
+    const val = orders.filter(o => (o.date || '').startsWith(key)).reduce((s, o) => s + o.amount, 0);
+    return { name, val, current: i === now.getMonth() };
+  });
+  const max = Math.max(1, ...monthly.map(m => m.val));
+  const yearTotal = monthly.reduce((s, m) => s + m.val, 0);
 
-  const invoices = [
-    { id: 'INV-2026-05', period: 'Mayıs 2026', amount: used,  status: 'Açık',   due: '2026-06-10' },
-    { id: 'INV-2026-04', period: 'Nisan 2026', amount: 32400, status: 'Ödendi', due: '2026-05-10' },
-    { id: 'INV-2026-03', period: 'Mart 2026',  amount: 28900, status: 'Ödendi', due: '2026-04-10' },
-    { id: 'INV-2026-02', period: 'Şubat 2026', amount: 21450, status: 'Ödendi', due: '2026-03-10' },
-    { id: 'INV-2026-01', period: 'Ocak 2026',  amount: 18900, status: 'Ödendi', due: '2026-02-10' },
-  ];
+  // Bu yılın siparişleri — fatura listesi yerine gerçek sipariş kayıtları
+  const yearOrders = orders
+    .filter(o => (o.date || '').startsWith(String(year)))
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }} className="dash-grid">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
         <PortalCard padding={28}>
           <div className="overline" style={{ color: 'var(--ink-60)' }}>Bu Ay Bütçe Kullanımı</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginTop: 14 }}>
@@ -601,41 +710,28 @@ export function PortalBilling({ state }: { state: PortalState }) {
             <div style={{ height: '100%', width: pct + '%', background: pct > 80 ? '#a85050' : 'var(--accent)', transition: 'width 0.4s' }} />
           </div>
           <div style={{ marginTop: 12, fontSize: 13, color: 'var(--ink-60)' }}>
-            %{Math.round(pct)} kullanıldı · {fmtTL(budget - used)} kaldı · ay sonuna {30 - new Date().getDate()} gün
+            %{Math.round(pct)} kullanıldı · {fmtTL(Math.max(0, budget - used))} kaldı
           </div>
-        </PortalCard>
-
-        <PortalCard padding={28}>
-          <div className="overline" style={{ color: 'var(--ink-60)' }}>Ödeme Yöntemi</div>
-          <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 50, height: 32, borderRadius: 4, background: 'linear-gradient(135deg, #1a1a2e, #4a4a6e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 600 }}>BANK</div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 500 }}>•••• 4329</div>
-              <div style={{ fontSize: 12, color: 'var(--ink-60)' }}>Garanti BBVA · Aylık fatura</div>
-            </div>
-          </div>
-          <PortalButton variant="ghost" size="sm" style={{ marginTop: 18, width: '100%', justifyContent: 'center' }}>Yöntemi Değiştir</PortalButton>
         </PortalCard>
       </div>
 
       <PortalCard padding={28}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
           <div>
-            <h3 className="serif" style={{ fontSize: 20, fontWeight: 500 }}>Aylık Harcama — 2026</h3>
-            <p style={{ fontSize: 13, color: 'var(--ink-60)', marginTop: 2 }}>Toplam {fmtTL(monthly.reduce((s, m) => s + m.val, 0))} · Ortalama {fmtTL(Math.round(monthly.reduce((s, m) => s + m.val, 0) / 12))} / ay</p>
+            <h3 className="serif" style={{ fontSize: 20, fontWeight: 500 }}>Aylık Harcama — {year}</h3>
+            <p style={{ fontSize: 13, color: 'var(--ink-60)', marginTop: 2 }}>Toplam {fmtTL(yearTotal)} · Ortalama {fmtTL(Math.round(yearTotal / 12))} / ay</p>
           </div>
-          <PortalButton variant="ghost" size="sm" icon={<Icons.ArrowDown size={14} />}>Dışa Aktar</PortalButton>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'flex-end', height: 200 }}>
           {monthly.map((m, i) => (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
               <div style={{
-                width: '100%', height: ((m.val / max) * 160) + 'px',
-                background: i === 4 ? 'var(--accent)' : 'var(--accent-soft)',
+                width: '100%', height: ((m.val / max) * 160) + 'px', minHeight: 2,
+                background: m.current ? 'var(--accent)' : 'var(--accent-soft)',
                 borderRadius: '4px 4px 0 0', transition: 'height 0.4s',
                 position: 'relative',
               }}>
-                {i === 4 && (
+                {m.current && (
                   <span style={{ position: 'absolute', top: -22, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: 'var(--accent)', whiteSpace: 'nowrap', fontWeight: 500 }}>
                     Şu an
                   </span>
@@ -648,78 +744,90 @@ export function PortalBilling({ state }: { state: PortalState }) {
       </PortalCard>
 
       <PortalCard padding={0}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 className="serif" style={{ fontSize: 20, fontWeight: 500 }}>Faturalar</h3>
-          <PortalButton variant="ghost" size="sm">Tümünü İndir</PortalButton>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line)' }}>
+          <h3 className="serif" style={{ fontSize: 20, fontWeight: 500 }}>{year} Siparişleri</h3>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 110px 130px 100px', padding: '14px 24px', borderBottom: '1px solid var(--line)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-60)', fontWeight: 500, gap: 16 }}>
-          <div>No</div>
-          <div>Dönem</div>
-          <div>Vade</div>
-          <div style={{ textAlign: 'right' }}>Tutar</div>
-          <div>Durum</div>
-          <div />
-        </div>
-        {invoices.map((iv, i) => (
-          <div key={iv.id} style={{
-            display: 'grid', gridTemplateColumns: '120px 1fr 1fr 110px 130px 100px',
-            padding: '14px 24px', gap: 16, alignItems: 'center',
-            borderBottom: i < invoices.length - 1 ? '1px solid var(--line)' : 'none',
-          }}>
-            <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--ink-60)' }}>{iv.id}</div>
-            <div style={{ fontSize: 13.5 }}>{iv.period}</div>
-            <div style={{ fontSize: 13, color: 'var(--ink-60)' }}>{fmtDate(iv.due)}</div>
-            <div style={{ textAlign: 'right', fontSize: 14, fontWeight: 500 }}>{fmtTL(iv.amount)}</div>
-            <div>
-              <span style={{
-                padding: '4px 10px', fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 500, borderRadius: 999,
-                background: iv.status === 'Ödendi' ? 'var(--accent-soft)' : '#FFF4E5',
-                color: iv.status === 'Ödendi' ? 'var(--accent-deep)' : '#995200',
-              }}>{iv.status}</span>
+        {yearOrders.length === 0 ? (
+          <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-60)' }}>Bu yıl için sipariş yok.</div>
+        ) : (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 130px 130px', padding: '14px 24px', borderBottom: '1px solid var(--line)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-60)', fontWeight: 500, gap: 16 }}>
+              <div>Tip & Alıcı</div>
+              <div>Tarih</div>
+              <div style={{ textAlign: 'right' }}>Tutar</div>
+              <div>Durum</div>
             </div>
-            <PortalButton variant="ghost" size="sm" icon={<Icons.ArrowDown size={12} />}>PDF</PortalButton>
-          </div>
-        ))}
+            {yearOrders.map((o, i) => (
+              <div key={o.id} style={{
+                display: 'grid', gridTemplateColumns: '1fr 1fr 130px 130px',
+                padding: '14px 24px', gap: 16, alignItems: 'center',
+                borderBottom: i < yearOrders.length - 1 ? '1px solid var(--line)' : 'none',
+              }}>
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 500 }}>{o.type}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 2 }}>{o.recipient}</div>
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--ink-60)' }}>{fmtDate(o.date)}</div>
+                <div style={{ textAlign: 'right', fontSize: 14, fontWeight: 500 }}>{fmtTL(o.amount)}</div>
+                <div><StatusBadge status={o.status} size="sm" /></div>
+              </div>
+            ))}
+          </>
+        )}
       </PortalCard>
     </div>
   );
 }
 
 // ============ Reports ============
+const CAT_COLORS = ['#3e5c4a', '#5c5e3f', '#7b5e19', '#a8b89e', '#c89e58', '#8a6d3b', '#6a8a7a'];
+
 export function PortalReports({ state }: { state: PortalState }) {
-  const cats = [
-    { name: 'Lobi Yenileme',      val: 17000, color: '#3e5c4a' },
-    { name: 'Kurumsal Hediye',    val: 8600,  color: '#5c5e3f' },
-    { name: 'Toplantı & Etkinlik',val: 5600,  color: '#7b5e19' },
-    { name: 'VIP Karşılama',      val: 4800,  color: '#a8b89e' },
-    { name: 'Açılış Çelengi',     val: 3200,  color: '#c89e58' },
-  ];
-  const total = cats.reduce((s, c) => s + c.val, 0);
+  const orders = state.orders || [];
 
-  const topRecipients = [
-    { name: 'Genel Merkez · Levent', count: 28, sum: 238000 },
-    { name: 'Etiler Şube',           count: 12, sum: 102000 },
-    { name: 'Ankara Bölge',          count: 8,  sum: 68000 },
-    { name: 'Selin Yılmaz (CFO)',    count: 4,  sum: 5800 },
-    { name: 'Murat Tan (Marketing)', count: 3,  sum: 4350 },
-  ];
+  // Kategori dağılımı — sipariş tipine göre toplam harcama
+  const catMap = new Map<string, number>();
+  orders.forEach(o => catMap.set(o.type, (catMap.get(o.type) || 0) + o.amount));
+  const cats = Array.from(catMap.entries())
+    .map(([name, val], i) => ({ name, val, color: CAT_COLORS[i % CAT_COLORS.length] }))
+    .sort((a, b) => b.val - a.val);
+  const total = cats.reduce((s, c) => s + c.val, 0) || 1;
 
-  const topTemplates = [
-    { name: 'Standart Lobi',    count: 18 },
-    { name: 'Doğumgünü Buketi', count: 8 },
-    { name: 'Toplantı Masası',  count: 5 },
-    { name: 'VIP Karşılama',    count: 4 },
-    { name: 'Açılış Çelengi',   count: 2 },
-  ];
+  // En sık alıcılar
+  const recMap = new Map<string, { count: number; sum: number }>();
+  orders.forEach(o => {
+    const r = recMap.get(o.recipient) || { count: 0, sum: 0 };
+    recMap.set(o.recipient, { count: r.count + 1, sum: r.sum + o.amount });
+  });
+  const topRecipients = Array.from(recMap.entries())
+    .map(([name, v]) => ({ name, ...v }))
+    .sort((a, b) => b.sum - a.sum)
+    .slice(0, 5);
+
+  // En popüler şablonlar
+  const tplMap = new Map<string, number>();
+  orders.forEach(o => tplMap.set(o.template, (tplMap.get(o.template) || 0) + 1));
+  const topTemplates = Array.from(tplMap.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const delivered = orders.filter(o => o.status === 'delivered').length;
+  const totalSpend = orders.reduce((s, o) => s + o.amount, 0);
+  const activeCount = orders.filter(o => !['delivered', 'rejected'].includes(o.status)).length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }} className="stats-grid">
-        <StatCard label="Yıllık Teslimat" value="56" hint="Geçen yıla göre +24%" trend="up" icon="Package" />
-        <StatCard label="Toplam Harcama" value={fmtTL(238000)} hint="Yıllık" icon="Gift" />
-        <StatCard label="Zamanında Teslim" value="98%" hint="Son 30 günde 24 sipariş" trend="up" icon="Clock" />
-        <StatCard label="Memnuniyet Skoru" value="4.8 / 5" hint="22 değerlendirme" trend="up" icon="Star" />
+        <StatCard label="Toplam Sipariş" value={String(orders.length)} hint="Tüm zamanlar" icon="Package" />
+        <StatCard label="Toplam Harcama" value={fmtTL(totalSpend)} hint="Tüm siparişler" icon="Gift" />
+        <StatCard label="Teslim Edilen" value={String(delivered)} hint={`${orders.length} sipariş içinden`} icon="Clock" />
+        <StatCard label="Aktif Sipariş" value={String(activeCount)} hint="Devam eden" icon="Star" />
       </div>
+
+      {orders.length === 0 && (
+        <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-60)' }}>Rapor için yeterli veri yok.</div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }} className="dash-grid">
         <PortalCard padding={28}>

@@ -1,30 +1,84 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Button, Reveal, SectionTitle } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
 import { PHOTOS, PhotoImage } from '@/components/site/images';
-import { BLOG_POSTS } from '@/lib/content';
+import type { BlogPost } from '@/lib/blog';
 
-export function BlogListPage() {
+// PHOTOS anahtarı ya da gerçek URL — ikisini de destekler
+function imgSrc(key: string): string {
+  return (PHOTOS as Record<string, string>)[key] || key;
+}
+
+// Basit markdown render: ## başlık, > alıntı, - liste, boş satır = paragraf
+function renderMarkdown(body: string): React.ReactNode[] {
+  const lines = (body || '').split('\n');
+  const out: React.ReactNode[] = [];
+  let i = 0;
+  let key = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim()) { i++; continue; }
+
+    if (line.startsWith('## ')) {
+      out.push(
+        <h2 key={key++} className="serif" style={{ fontSize: 32, fontWeight: 500, marginTop: 50, marginBottom: 18, lineHeight: 1.2 }}>
+          {line.slice(3)}
+        </h2>,
+      );
+      i++; continue;
+    }
+    if (line.startsWith('> ')) {
+      out.push(
+        <blockquote key={key++} style={{ margin: '40px 0', padding: '24px 32px', borderLeft: '3px solid var(--accent)', background: 'var(--accent-soft)' }}>
+          <p className="serif" style={{ fontSize: 24, fontStyle: 'italic', color: 'var(--accent-deep)', lineHeight: 1.4 }}>“{line.slice(2)}”</p>
+        </blockquote>,
+      );
+      i++; continue;
+    }
+    if (line.startsWith('- ')) {
+      const items: string[] = [];
+      while (i < lines.length && lines[i].startsWith('- ')) { items.push(lines[i].slice(2)); i++; }
+      out.push(
+        <ul key={key++} style={{ marginBottom: 28, paddingLeft: 0, listStyle: 'none' }}>
+          {items.map((it, j) => (
+            <li key={j} style={{ display: 'flex', gap: 14, padding: '10px 0', fontSize: 17, lineHeight: 1.6 }}>
+              <span style={{ color: 'var(--accent)', fontSize: 20 }}>✦</span>
+              <span>{it}</span>
+            </li>
+          ))}
+        </ul>,
+      );
+      continue;
+    }
+    // paragraf — sonraki blok başlangıcına kadar topla
+    const para: string[] = [];
+    while (
+      i < lines.length && lines[i].trim() &&
+      !lines[i].startsWith('## ') && !lines[i].startsWith('> ') && !lines[i].startsWith('- ')
+    ) { para.push(lines[i]); i++; }
+    out.push(
+      <p key={key++} style={{ fontSize: 18, lineHeight: 1.8, color: 'var(--ink)', marginBottom: 24 }}>
+        {para.join(' ')}
+      </p>,
+    );
+  }
+  return out;
+}
+
+export function BlogListPage({ posts }: { posts: BlogPost[] }) {
   const [cat, setCat] = useState('Tümü');
   const [q, setQ] = useState('');
-  const cats = ['Tümü', ...Array.from(new Set((BLOG_POSTS as any[]).map(p => p.cat)))];
+  const cats = ['Tümü', ...Array.from(new Set(posts.map(p => p.category)))];
 
-  useEffect(() => {
-    document.title = 'Blog · GAIA Çiçeğe Dair';
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) (meta as HTMLMetaElement).content = 'Düğün, kurumsal çiçek, teklif sahnesi ve rehber yazıları — GAIA atölyesinden.';
-  }, []);
-
-  const posts = (BLOG_POSTS as any[]).filter(p =>
-    (cat === 'Tümü' || p.cat === cat) &&
-    (q === '' || p.title.toLowerCase().includes(q.toLowerCase()) || p.excerpt.toLowerCase().includes(q.toLowerCase()))
+  const filtered = posts.filter(p =>
+    (cat === 'Tümü' || p.category === cat) &&
+    (q === '' || p.title.toLowerCase().includes(q.toLowerCase()) || p.excerpt.toLowerCase().includes(q.toLowerCase())),
   );
-  const featured = posts[0];
-  const rest = posts.slice(1);
+  const featured = filtered[0];
+  const rest = filtered.slice(1);
 
   return (
     <>
@@ -69,20 +123,26 @@ export function BlogListPage() {
         </div>
       </section>
 
+      {posts.length === 0 && (
+        <section style={{ padding: '100px 0', background: 'var(--paper)', textAlign: 'center', color: 'var(--ink-60)' }}>
+          Henüz yayınlanmış yazı yok.
+        </section>
+      )}
+
       {featured && (
         <section style={{ padding: '60px 0', background: 'var(--paper)' }}>
           <div className="container">
             <Link href={`/blog/${featured.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 50, cursor: 'pointer', alignItems: 'center' }} className="blog-featured">
                 <div style={{ overflow: 'hidden' }}>
-                  <PhotoImage src={(PHOTOS as any)[featured.cover]} ratio="4/3" />
+                  <PhotoImage src={imgSrc(featured.cover)} ratio="4/3" />
                 </div>
                 <div>
-                  <div className="overline" style={{ color: 'var(--accent)' }}>◦ Öne Çıkan · {featured.cat} ◦</div>
+                  <div className="overline" style={{ color: 'var(--accent)' }}>◦ Öne Çıkan · {featured.category} ◦</div>
                   <h2 className="serif" style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 400, marginTop: 20, lineHeight: 1.1 }}>{featured.title}</h2>
                   <p style={{ marginTop: 16, fontSize: 17, color: 'var(--ink-60)', lineHeight: 1.6 }}>{featured.excerpt}</p>
                   <div style={{ marginTop: 26, display: 'flex', gap: 16, fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-40)' }}>
-                    <span>{formatDate(featured.date)}</span>·
+                    <span>{formatDate(featured.publishedAt)}</span>·
                     <span>{featured.readMin} dk okuma</span>·
                     <span style={{ color: 'var(--accent)' }}>Oku →</span>
                   </div>
@@ -98,7 +158,7 @@ export function BlogListPage() {
         <div className="container">
           {rest.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-60)' }}>
-              Arama sonucu bulunamadı.
+              {posts.length > 0 ? 'Arama sonucu bulunamadı.' : ''}
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 40 }}>
@@ -110,14 +170,14 @@ export function BlogListPage() {
                       onMouseLeave={e => { const img = (e.currentTarget as HTMLElement).querySelector('img'); if (img) (img as HTMLImageElement).style.transform = 'scale(1)'; }}
                     >
                       <div style={{ overflow: 'hidden' }}>
-                        <PhotoImage src={(PHOTOS as any)[p.cover]} ratio="4/3" />
+                        <PhotoImage src={imgSrc(p.cover)} ratio="4/3" />
                       </div>
                       <div style={{ marginTop: 18 }}>
-                        <div className="overline" style={{ color: 'var(--accent)' }}>{p.cat}</div>
+                        <div className="overline" style={{ color: 'var(--accent)' }}>{p.category}</div>
                         <h3 className="serif" style={{ fontSize: 24, fontWeight: 500, marginTop: 10, lineHeight: 1.2 }}>{p.title}</h3>
                         <p style={{ fontSize: 14, color: 'var(--ink-60)', marginTop: 10, lineHeight: 1.55 }}>{p.excerpt}</p>
                         <div style={{ marginTop: 14, display: 'flex', gap: 10, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ink-40)' }}>
-                          <span>{formatDate(p.date)}</span>·<span>{p.readMin} dk</span>
+                          <span>{formatDate(p.publishedAt)}</span>·<span>{p.readMin} dk</span>
                         </div>
                       </div>
                     </article>
@@ -132,19 +192,12 @@ export function BlogListPage() {
   );
 }
 
-export function BlogDetailPage({ slug, onQuote }: { slug: string; onQuote?: () => void }) {
-  const p = (BLOG_POSTS as any[]).find(x => x.slug === slug);
-
+export function BlogDetailPage({ post, related }: { post: BlogPost; related: BlogPost[] }) {
   useEffect(() => {
-    if (!p) return;
-    document.title = `${p.title} · GAIA Blog`;
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) (meta as HTMLMetaElement).content = p.excerpt;
-  }, [slug]);
+    document.title = `${post.title} · GAIA Blog`;
+  }, [post.title]);
 
-  if (!p) return <div style={{ padding: 200, textAlign: 'center' }}>Yazı bulunamadı.</div>;
-
-  const relatedPosts = ((p.related as string[]) || []).map((s: string) => (BLOG_POSTS as any[]).find(x => x.slug === s)).filter(Boolean);
+  const p = post;
 
   return (
     <>
@@ -153,9 +206,9 @@ export function BlogDetailPage({ slug, onQuote }: { slug: string; onQuote?: () =
           <Breadcrumbs items={[
             { label: 'Ana Sayfa', href: '/' },
             { label: 'Blog', href: '/blog' },
-            { label: p.title }
+            { label: p.title },
           ]} />
-          <div className="overline" style={{ color: 'var(--accent)', marginTop: 30 }}>◦ {p.cat} ◦</div>
+          <div className="overline" style={{ color: 'var(--accent)', marginTop: 30 }}>◦ {p.category} ◦</div>
           <h1 className="serif" style={{ fontSize: 'clamp(38px, 5.5vw, 76px)', fontWeight: 300, lineHeight: 1.05, marginTop: 18, letterSpacing: '-0.01em' }}>
             {p.title}
           </h1>
@@ -163,49 +216,34 @@ export function BlogDetailPage({ slug, onQuote }: { slug: string; onQuote?: () =
             {p.excerpt}
           </p>
           <div style={{ marginTop: 36, display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 30, borderBottom: '1px solid var(--line)' }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden' }}>
-              <PhotoImage src={(PHOTOS as any)[p.author.photo]} ratio="1/1" />
-            </div>
+            {p.authorPhoto && (
+              <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden' }}>
+                <PhotoImage src={imgSrc(p.authorPhoto)} ratio="1/1" />
+              </div>
+            )}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 500 }}>{p.author.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--ink-60)' }}>{p.author.role}</div>
+              <div style={{ fontSize: 14, fontWeight: 500 }}>{p.author}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-60)' }}>{p.authorRole}</div>
             </div>
             <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ink-40)', textAlign: 'right' }}>
-              <div>{formatDate(p.date)}</div>
+              <div>{formatDate(p.publishedAt)}</div>
               <div style={{ marginTop: 4 }}>{p.readMin} dk okuma</div>
             </div>
           </div>
         </div>
       </section>
 
-      <section style={{ background: 'var(--paper)' }}>
-        <div className="container" style={{ maxWidth: 1100 }}>
-          <PhotoImage src={(PHOTOS as any)[p.cover]} ratio="16/9" />
-        </div>
-      </section>
+      {p.cover && (
+        <section style={{ background: 'var(--paper)' }}>
+          <div className="container" style={{ maxWidth: 1100 }}>
+            <PhotoImage src={imgSrc(p.cover)} ratio="16/9" />
+          </div>
+        </section>
+      )}
 
       <article style={{ padding: '60px 0 100px', background: 'var(--paper)' }}>
         <div className="container" style={{ maxWidth: 760 }}>
-          {p.blocks.map((b: any, i: number) => {
-            if (b.type === 'p') return <p key={i} style={{ fontSize: 18, lineHeight: 1.8, color: 'var(--ink)', marginBottom: 24 }}>{b.text}</p>;
-            if (b.type === 'h2') return <h2 key={i} className="serif" style={{ fontSize: 32, fontWeight: 500, marginTop: 50, marginBottom: 18, lineHeight: 1.2 }}>{b.text}</h2>;
-            if (b.type === 'quote') return (
-              <blockquote key={i} style={{ margin: '40px 0', padding: '24px 32px', borderLeft: '3px solid var(--accent)', background: 'var(--accent-soft)' }}>
-                <p className="serif" style={{ fontSize: 24, fontStyle: 'italic', color: 'var(--accent-deep)', lineHeight: 1.4 }}>"{b.text}"</p>
-              </blockquote>
-            );
-            if (b.type === 'list') return (
-              <ul key={i} style={{ marginBottom: 28, paddingLeft: 0, listStyle: 'none' }}>
-                {b.items.map((it: string, j: number) => (
-                  <li key={j} style={{ display: 'flex', gap: 14, padding: '10px 0', fontSize: 17, lineHeight: 1.6 }}>
-                    <span style={{ color: 'var(--accent)', fontSize: 20 }}>✦</span>
-                    <span>{it}</span>
-                  </li>
-                ))}
-              </ul>
-            );
-            return null;
-          })}
+          {renderMarkdown(p.body)}
 
           <div style={{ marginTop: 60, paddingTop: 30, borderTop: '1px solid var(--line)', display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--ink-60)' }}>Paylaş</span>
@@ -222,13 +260,15 @@ export function BlogDetailPage({ slug, onQuote }: { slug: string; onQuote?: () =
       <section style={{ padding: '60px 0', background: 'var(--accent-soft)' }}>
         <div className="container" style={{ maxWidth: 760 }}>
           <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
-              <PhotoImage src={(PHOTOS as any)[p.author.photo]} ratio="1/1" />
-            </div>
+            {p.authorPhoto && (
+              <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+                <PhotoImage src={imgSrc(p.authorPhoto)} ratio="1/1" />
+              </div>
+            )}
             <div style={{ flex: 1, minWidth: 240 }}>
               <div className="overline" style={{ color: 'var(--accent)' }}>Yazan</div>
-              <div className="serif" style={{ fontSize: 28, fontWeight: 500, marginTop: 6 }}>{p.author.name}</div>
-              <div style={{ fontSize: 14, color: 'var(--ink-60)', marginTop: 4 }}>{p.author.role} — GAIA Atölyesi</div>
+              <div className="serif" style={{ fontSize: 28, fontWeight: 500, marginTop: 6 }}>{p.author}</div>
+              <div style={{ fontSize: 14, color: 'var(--ink-60)', marginTop: 4 }}>{p.authorRole} — GAIA Atölyesi</div>
             </div>
             <Link href="/iletisim" style={{ textDecoration: 'none' }}>
               <Button variant="outlinedAccent" iconRight={<Icons.Arrow size={14} />}>İletişim</Button>
@@ -237,18 +277,18 @@ export function BlogDetailPage({ slug, onQuote }: { slug: string; onQuote?: () =
         </div>
       </section>
 
-      {relatedPosts.length > 0 && (
+      {related.length > 0 && (
         <section style={{ padding: '80px 0 120px', background: 'var(--paper)' }}>
           <div className="container">
             <SectionTitle eyebrow="Ayrıca" title="İlgili yazılar." />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 30, marginTop: 40 }}>
-              {relatedPosts.map((r: any) => (
+              {related.map((r) => (
                 <Link key={r.slug} href={`/blog/${r.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                   <article style={{ cursor: 'pointer' }}>
                     <div style={{ overflow: 'hidden' }}>
-                      <PhotoImage src={(PHOTOS as any)[r.cover]} ratio="4/3" />
+                      <PhotoImage src={imgSrc(r.cover)} ratio="4/3" />
                     </div>
-                    <div className="overline" style={{ color: 'var(--accent)', marginTop: 14 }}>{r.cat}</div>
+                    <div className="overline" style={{ color: 'var(--accent)', marginTop: 14 }}>{r.category}</div>
                     <h3 className="serif" style={{ fontSize: 22, fontWeight: 500, marginTop: 8, lineHeight: 1.25 }}>{r.title}</h3>
                   </article>
                 </Link>

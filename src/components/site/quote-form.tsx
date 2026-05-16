@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Input, TextArea, Select, Field } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
+import { createClient } from '@/lib/supabase/client';
 
 export function QuoteForm({ open, onClose, preset }: { open: boolean; onClose: () => void; preset?: string }) {
   const [step, setStep] = useState(0);
@@ -14,6 +15,8 @@ export function QuoteForm({ open, onClose, preset }: { open: boolean; onClose: (
   });
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => { if (preset && open) setData((d: any) => ({ ...d, tip: preset })); }, [preset, open]);
   useEffect(() => {
@@ -27,6 +30,41 @@ export function QuoteForm({ open, onClose, preset }: { open: boolean; onClose: (
   const butceler = ['2.500 – 5.000 ₺', '5.000 – 15.000 ₺', '15.000 – 40.000 ₺', '40.000 – 100.000 ₺', '100.000 ₺+', 'Size Özel'];
 
   const update = (k: string, v: any) => setData((d: any) => ({ ...d, [k]: v }));
+
+  const handleUpload = async (fileList: FileList | null) => {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return;
+    setUploading(true);
+    setUploadError('');
+    try {
+      const supabase = createClient();
+      const urls: string[] = [];
+      for (const file of files) {
+        if (file.size > 10 * 1024 * 1024) {
+          setUploadError(`${file.name} 10MB sınırını aşıyor.`);
+          continue;
+        }
+        const ext = file.name.split('.').pop() || 'jpg';
+        const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await supabase.storage
+          .from('teklif-dosyalari')
+          .upload(path, file, { upsert: false });
+        if (error) {
+          setUploadError('Dosya yüklenemedi: ' + error.message);
+          continue;
+        }
+        const { data: pub } = supabase.storage
+          .from('teklif-dosyalari')
+          .getPublicUrl(path);
+        urls.push(pub.publicUrl);
+      }
+      if (urls.length) update('files', [...(data.files || []), ...urls]);
+    } catch {
+      setUploadError('Yükleme sırasında bir hata oluştu.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const submit = async () => {
     setSubmitting(true);
@@ -137,11 +175,14 @@ export function QuoteForm({ open, onClose, preset }: { open: boolean; onClose: (
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, color: 'var(--ink-60)',
                   }}>
                     <Icons.Upload size={22} />
-                    <span>Dosya seç veya buraya sürükle</span>
-                    <input type="file" accept="image/*" multiple style={{ display: 'none' }}
-                      onChange={e => update('files', Array.from(e.target.files || []).map(f => f.name))} />
+                    <span>{uploading ? 'Yükleniyor…' : 'Dosya seç veya buraya sürükle'}</span>
+                    <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={uploading}
+                      onChange={e => handleUpload(e.target.files)} />
                     {data.files.length > 0 && (
-                      <div style={{ marginTop: 8, fontSize: 12, color: 'var(--accent)' }}>{data.files.length} dosya seçildi</div>
+                      <div style={{ marginTop: 8, fontSize: 12, color: 'var(--accent)' }}>{data.files.length} dosya yüklendi</div>
+                    )}
+                    {uploadError && (
+                      <div style={{ marginTop: 8, fontSize: 12, color: '#9b2c2c' }}>{uploadError}</div>
                     )}
                   </label>
                 </Field>

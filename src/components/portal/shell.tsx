@@ -26,6 +26,7 @@ const adminNav: NavItem[] = [
   { id: 'admin-pending',  label: 'Onaylar',     icon: 'Check',    badge: 3, href: '/admin/bekleyen-firmalar' },
   { id: 'admin-kanban',   label: 'Kanban',      icon: 'Package',  href: '/admin/kanban' },
   { id: 'admin-capacity', label: 'Atölye',      icon: 'Hall',     href: '/admin/atolye' },
+  { id: 'admin-blog',     label: 'Blog',        icon: 'Star',     href: '/admin/blog' },
 ]
 
 const titleMap: Record<string, string> = {
@@ -41,6 +42,7 @@ const titleMap: Record<string, string> = {
   '/admin/bekleyen-firmalar':'Bekleyen Firma Onayları',
   '/admin/kanban':          'Sipariş Kanban',
   '/admin/atolye':          'Atölye Kapasite',
+  '/admin/blog':            'Blog Yönetimi',
 };
 
 export function PortalShell({ children, auth, isAdmin }: {

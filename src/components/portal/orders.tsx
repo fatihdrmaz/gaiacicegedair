@@ -1,7 +1,7 @@
 'use client';
 // Portal — Orders: list, new wizard, detail/timeline
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Icons } from '@/components/shared/icons';
@@ -366,18 +366,52 @@ export function ReviewRow({ label, value }: { label: string; value: React.ReactN
 }
 
 // ============ Order Detail / Timeline ============
+type OrderEvent = {
+  id: string;
+  event_type: string | null;
+  old_status: string | null;
+  new_status: string | null;
+  note: string | null;
+  photo_url: string | null;
+  created_at: string;
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'Talep alındı',
+  reviewing: 'İncelemede',
+  approved: 'Onaylandı',
+  workshop: 'Atölyede',
+  production: 'Atölyede',
+  shipping: 'Yolda',
+  delivered: 'Teslim edildi',
+  rejected: 'Reddedildi',
+};
+
+function fmtDateTime(iso: string) {
+  try {
+    return new Date(iso).toLocaleString('tr-TR', {
+      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+    });
+  } catch {
+    return iso;
+  }
+}
+
 export function PortalOrderDetail({ orderId, state }: { orderId: string; state: PortalState }) {
   const router = useRouter();
   const o = (state.orders || []).find(x => x.id === orderId);
-  if (!o) return <div style={{ padding: 60, textAlign: 'center' }}>Sipariş bulunamadı. <PortalButton variant="ghost" onClick={() => router.push('/portal/siparisler')}>← Geri</PortalButton></div>;
+  const [events, setEvents] = useState<OrderEvent[] | null>(null);
 
-  const timeline = [
-    { status: 'pending',    label: 'Talep alındı',   date: o.createdAt + ' 09:14', done: true },
-    { status: 'approved',   label: 'Onaylandı',      date: o.createdAt + ' 11:30', done: ['approved', 'production', 'shipping', 'delivered'].includes(o.status) },
-    { status: 'production', label: 'Atölyede',       date: o.createdAt + ' 14:00', done: ['production', 'shipping', 'delivered'].includes(o.status) },
-    { status: 'shipping',   label: 'Yolda',          date: o.date + ' 08:30',      done: ['shipping', 'delivered'].includes(o.status) },
-    { status: 'delivered',  label: 'Teslim edildi',  date: o.date + ' 10:42',      done: o.status === 'delivered' },
-  ];
+  useEffect(() => {
+    let active = true;
+    fetch('/api/portal/siparis/' + encodeURIComponent(orderId))
+      .then(r => (r.ok ? r.json() : { events: [] }))
+      .then(d => { if (active) setEvents(d.events || []); })
+      .catch(() => { if (active) setEvents([]); });
+    return () => { active = false; };
+  }, [orderId]);
+
+  if (!o) return <div style={{ padding: 60, textAlign: 'center' }}>Sipariş bulunamadı. <PortalButton variant="ghost" onClick={() => router.push('/portal/siparisler')}>← Geri</PortalButton></div>;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -391,76 +425,64 @@ export function PortalOrderDetail({ orderId, state }: { orderId: string; state: 
           <h2 className="serif" style={{ fontSize: 32, fontWeight: 500, marginTop: 4 }}>{o.type}</h2>
           <div style={{ marginTop: 8 }}><StatusBadge status={o.status} /></div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {o.status === 'pending' && <PortalButton variant="danger" size="md">Talebi İptal Et</PortalButton>}
-          <PortalButton variant="ghost" size="md" icon={<Icons.Mail size={14} />}>Mesaj Gönder</PortalButton>
-        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }} className="dash-grid">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <PortalCard padding={28}>
             <h3 className="serif" style={{ fontSize: 20, fontWeight: 500, marginBottom: 22 }}>Sipariş Akışı</h3>
-            <div style={{ position: 'relative', paddingLeft: 28 }}>
-              <div style={{ position: 'absolute', left: 11, top: 8, bottom: 8, width: 2, background: 'var(--line)' }} />
-              {timeline.map((t, i) => (
-                <div key={i} style={{ position: 'relative', marginBottom: 22 }}>
-                  <div style={{
-                    position: 'absolute', left: -24, top: 2,
-                    width: 22, height: 22, borderRadius: '50%',
-                    background: t.done ? 'var(--accent)' : 'var(--paper)',
-                    border: '2px solid ' + (t.done ? 'var(--accent)' : 'var(--ink-20)'),
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
-                  }}>
-                    {t.done && <Icons.Check size={11} />}
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: t.done ? 'var(--ink)' : 'var(--ink-40)' }}>{t.label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--ink-40)', marginTop: 3 }}>{t.done ? t.date : 'Bekliyor'}</div>
-                  {t.done && t.status === 'production' && (
-                    <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-                      <img src={(PHOTOS as any)[o.photos[0]]} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6 }} />
-                      <div style={{ fontSize: 12, color: 'var(--ink-60)', lineHeight: 1.5 }}>
-                        <strong>Atölyeden:</strong> Çiçekleriniz hazırlanıyor. Beklenen teslim: {fmtDate(o.date)} {t.label.includes('Yolda') ? '' : '· 09:30'}
+            {events === null ? (
+              <div style={{ fontSize: 13, color: 'var(--ink-60)' }}>Yükleniyor…</div>
+            ) : events.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--ink-60)' }}>Henüz hareket kaydı yok.</div>
+            ) : (
+              <div style={{ position: 'relative', paddingLeft: 28 }}>
+                <div style={{ position: 'absolute', left: 11, top: 8, bottom: 8, width: 2, background: 'var(--line)' }} />
+                {events.map((ev) => {
+                  const label = ev.new_status
+                    ? (STATUS_LABEL[ev.new_status] || ev.new_status)
+                    : (ev.event_type === 'photo_added' ? 'Fotoğraf eklendi' : 'Güncelleme');
+                  return (
+                    <div key={ev.id} style={{ position: 'relative', marginBottom: 22 }}>
+                      <div style={{
+                        position: 'absolute', left: -24, top: 2,
+                        width: 22, height: 22, borderRadius: '50%',
+                        background: 'var(--accent)', border: '2px solid var(--accent)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+                      }}>
+                        <Icons.Check size={11} />
                       </div>
+                      <div style={{ fontSize: 14, fontWeight: 500 }}>{label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-40)', marginTop: 3 }}>{fmtDateTime(ev.created_at)}</div>
+                      {ev.note && (
+                        <div style={{ fontSize: 12.5, color: 'var(--ink-60)', marginTop: 6, lineHeight: 1.5 }}>{ev.note}</div>
+                      )}
+                      {ev.photo_url && (
+                        <img src={ev.photo_url} alt="" style={{ marginTop: 10, width: 120, height: 120, objectFit: 'cover', borderRadius: 6 }} />
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </PortalCard>
-
-          <PortalCard padding={28}>
-            <h3 className="serif" style={{ fontSize: 20, fontWeight: 500, marginBottom: 22 }}>GAIA Hesap Yöneticisi ile</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <ChatBubble side="left" name="Naz · GAIA" text="Merhaba Ayşe Hanım, talebinizi aldık. Pastel palet uygun — atölyeye giriyor. Teslim öncesi fotoğraf paylaşacağız." time="14:02" />
-              <ChatBubble side="right" name="Siz" text="Harika, teşekkürler. Kart notunu son dakikada güncelleyebilir miyim?" time="14:18" />
-              <ChatBubble side="left" name="Naz · GAIA" text="Tabii, teslimden 4 saat önceye kadar güncelleyebiliriz." time="14:20" />
-            </div>
-            <div style={{ marginTop: 18, display: 'flex', gap: 8 }}>
-              <input placeholder="Bir mesaj yazın…" style={{ flex: 1, padding: '11px 14px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 14, outline: 'none' }} />
-              <PortalButton variant="primary">Gönder</PortalButton>
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </PortalCard>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <PortalCard padding={0}>
-            <img src={(PHOTOS as any)[o.photos[0]]} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
-            <div style={{ padding: 20 }}>
-              <div className="overline" style={{ color: 'var(--ink-40)' }}>Şablon</div>
-              <div style={{ fontSize: 14, fontWeight: 500, marginTop: 4 }}>{o.template}</div>
-            </div>
-          </PortalCard>
+          {o.photos && o.photos[0] && (PHOTOS as any)[o.photos[0]] && (
+            <PortalCard padding={0}>
+              <img src={(PHOTOS as any)[o.photos[0]]} alt="" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
+            </PortalCard>
+          )}
 
           <PortalCard padding={24}>
             <h4 style={{ fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-60)', marginBottom: 16 }}>Detaylar</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <DetailLine label="Şablon" value={o.template} />
               <DetailLine label="Alıcı" value={o.recipient} />
               <DetailLine label="Adres" value={o.addr} />
               <DetailLine label="Teslim" value={fmtDate(o.date)} />
               <DetailLine label="Tutar" value={fmtTL(o.amount)} />
-              <DetailLine label="Talep Eden" value={o.createdBy} />
-              <DetailLine label="GAIA Sorumlu" value={o.assignee} />
               {o.notes && <DetailLine label="Notlar" value={`"${o.notes}"`} />}
             </div>
           </PortalCard>

@@ -2,11 +2,12 @@
 // Portal — GAIA Admin Panel
 // Admin dashboard, pending approvals, kanban, capacity
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icons } from '@/components/shared/icons';
 import {
   PortalCard, StatCard, PortalButton, Avatar,
+  PortalInput, PortalTextarea, PortalSelect,
   fmtTL, fmtDay, relTime,
 } from '@/components/portal/ui';
 import { type PortalState } from '@/lib/portal-data';
@@ -459,6 +460,196 @@ export function PortalAdminCapacity({ state }: { state: PortalState }) {
           </div>
         ))}
       </PortalCard>
+    </div>
+  );
+}
+
+// ============ Blog Yönetimi ============
+type BlogRow = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  body: string | null;
+  category: string | null;
+  author: string | null;
+  author_role: string | null;
+  author_photo: string | null;
+  cover_url: string | null;
+  read_minutes: number | null;
+  related: string[] | null;
+  published: boolean;
+  published_at: string | null;
+};
+
+const emptyBlog = {
+  id: '', slug: '', title: '', excerpt: '', body: '', category: 'Rehber',
+  author: 'GAIA Çiçeğe Dair', authorRole: '', authorPhoto: '', cover: '',
+  readMin: 4, related: '', published: false,
+};
+
+export function PortalAdminBlog() {
+  const [posts, setPosts] = useState<BlogRow[] | null>(null);
+  const [form, setForm] = useState<typeof emptyBlog | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const upd = (k: string, v: string | number | boolean) => setForm(f => f ? { ...f, [k]: v } : f);
+
+  const load = () => {
+    fetch('/api/admin/blog')
+      .then(r => (r.ok ? r.json() : { posts: [] }))
+      .then(d => setPosts(d.posts || []))
+      .catch(() => setPosts([]));
+  };
+  useEffect(load, []);
+
+  const startNew = () => { setForm({ ...emptyBlog }); setError(''); };
+  const startEdit = (p: BlogRow) => {
+    setForm({
+      id: p.id, slug: p.slug, title: p.title, excerpt: p.excerpt || '',
+      body: p.body || '', category: p.category || 'Rehber',
+      author: p.author || '', authorRole: p.author_role || '',
+      authorPhoto: p.author_photo || '', cover: p.cover_url || '',
+      readMin: p.read_minutes || 4, related: (p.related || []).join(', '),
+      published: p.published,
+    });
+    setError('');
+  };
+
+  const save = async () => {
+    if (!form) return;
+    setBusy(true); setError('');
+    try {
+      const payload = {
+        ...(form.id ? { id: form.id } : {}),
+        slug: form.slug, title: form.title, excerpt: form.excerpt,
+        body: form.body, category: form.category, author: form.author,
+        authorRole: form.authorRole, authorPhoto: form.authorPhoto,
+        cover: form.cover, readMin: Number(form.readMin) || 4,
+        related: form.related.split(',').map(s => s.trim()).filter(Boolean),
+        published: form.published,
+      };
+      const res = await fetch('/api/admin/blog', {
+        method: form.id ? 'PATCH' : 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error || 'Kaydedilemedi.'); return; }
+      setForm(null);
+      load();
+    } catch { setError('Bağlantı hatası.'); } finally { setBusy(false); }
+  };
+
+  const remove = async (id: string) => {
+    if (!window.confirm('Bu yazıyı silmek istediğinize emin misiniz?')) return;
+    try {
+      const res = await fetch('/api/admin/blog?id=' + encodeURIComponent(id), { method: 'DELETE' });
+      if (res.ok) load();
+    } catch { /* yoksay */ }
+  };
+
+  const togglePublish = async (p: BlogRow) => {
+    try {
+      const res = await fetch('/api/admin/blog', {
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: p.id, published: !p.published }),
+      });
+      if (res.ok) load();
+    } catch { /* yoksay */ }
+  };
+
+  // Düzenleme / oluşturma formu
+  if (form) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 880 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 className="serif" style={{ fontSize: 24, fontWeight: 500 }}>{form.id ? 'Yazıyı Düzenle' : 'Yeni Yazı'}</h2>
+          <PortalButton variant="ghost" onClick={() => setForm(null)}>← Listeye dön</PortalButton>
+        </div>
+        <PortalCard padding={28}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <PortalInput label="Başlık" required value={form.title} onChange={e => upd('title', e.target.value)} />
+            <PortalInput label="Slug (URL)" required value={form.slug} onChange={e => upd('slug', e.target.value)} placeholder="dugun-palet" />
+            <div style={{ gridColumn: 'span 2' }}>
+              <PortalTextarea label="Özet" value={form.excerpt} onChange={e => upd('excerpt', e.target.value)} rows={2} />
+            </div>
+            <PortalSelect label="Kategori" value={form.category} onChange={e => upd('category', e.target.value)}
+              options={['Düğün', 'Kurumsal', 'Rehber', 'Konsept', 'Haber']} />
+            <PortalInput label="Okuma süresi (dk)" type="number" value={String(form.readMin)} onChange={e => upd('readMin', e.target.value)} />
+            <PortalInput label="Yazar" value={form.author} onChange={e => upd('author', e.target.value)} />
+            <PortalInput label="Yazar ünvanı" value={form.authorRole} onChange={e => upd('authorRole', e.target.value)} />
+            <PortalInput label="Kapak görseli (URL)" value={form.cover} onChange={e => upd('cover', e.target.value)} placeholder="https://…" />
+            <PortalInput label="Yazar foto (URL)" value={form.authorPhoto} onChange={e => upd('authorPhoto', e.target.value)} placeholder="https://…" />
+            <div style={{ gridColumn: 'span 2' }}>
+              <PortalInput label="İlgili yazı slug'ları (virgülle)" value={form.related} onChange={e => upd('related', e.target.value)} placeholder="bukent-rehberi, kurumsal-lobi" />
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <PortalTextarea label="İçerik (markdown — ## başlık, > alıntı, - liste)" value={form.body} onChange={e => upd('body', e.target.value)} rows={16} />
+            </div>
+          </div>
+          <label style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.published} onChange={e => upd('published', e.target.checked)} />
+            Yayında
+          </label>
+          {error && <div style={{ marginTop: 14, padding: '10px 14px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 13 }}>{error}</div>}
+          <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <PortalButton variant="ghost" onClick={() => setForm(null)}>İptal</PortalButton>
+            <PortalButton variant="primary" onClick={save} disabled={busy}>{busy ? 'Kaydediliyor…' : 'Kaydet'}</PortalButton>
+          </div>
+        </PortalCard>
+      </div>
+    );
+  }
+
+  // Liste
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+        <p style={{ color: 'var(--ink-60)', fontSize: 14, maxWidth: 600 }}>
+          Blog yazılarını oluşturun, düzenleyin ve yayınlayın. Yayınlanan yazılar siteye saatlik olarak yansır.
+        </p>
+        <PortalButton variant="primary" icon={<Icons.Plus size={14} />} onClick={startNew}>Yeni Yazı</PortalButton>
+      </div>
+
+      {posts === null ? (
+        <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-60)' }}>Yükleniyor…</div>
+      ) : posts.length === 0 ? (
+        <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-60)' }}>Henüz yazı yok.</div>
+      ) : (
+        <PortalCard padding={0}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 110px 130px', padding: '14px 24px', borderBottom: '1px solid var(--line)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-60)', fontWeight: 500, gap: 16 }}>
+            <div>Başlık</div>
+            <div>Kategori</div>
+            <div>Durum</div>
+            <div />
+          </div>
+          {posts.map((p, i) => (
+            <div key={p.id} style={{
+              display: 'grid', gridTemplateColumns: '2fr 1fr 110px 130px',
+              padding: '14px 24px', gap: 16, alignItems: 'center',
+              borderBottom: i < posts.length - 1 ? '1px solid var(--line)' : 'none',
+            }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>{p.title}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 2, fontFamily: 'monospace' }}>/{p.slug}</div>
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--ink-60)' }}>{p.category}</div>
+              <div>
+                <button onClick={() => togglePublish(p)} style={{
+                  padding: '4px 10px', fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 500, borderRadius: 999, cursor: 'pointer', border: 'none',
+                  background: p.published ? 'var(--accent-soft)' : '#FFF4E5',
+                  color: p.published ? 'var(--accent-deep)' : '#995200',
+                }}>{p.published ? 'Yayında' : 'Taslak'}</button>
+              </div>
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                <PortalButton variant="ghost" size="sm" onClick={() => startEdit(p)}>Düzenle</PortalButton>
+                <button onClick={() => remove(p.id)} title="Sil" style={{ padding: 6, color: 'var(--ink-60)', background: 'transparent', border: 'none', cursor: 'pointer' }}><Icons.Trash size={15} /></button>
+              </div>
+            </div>
+          ))}
+        </PortalCard>
+      )}
     </div>
   );
 }
