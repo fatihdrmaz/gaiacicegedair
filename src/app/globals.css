@@ -1,49 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Noto+Serif+Display:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&family=Cormorant:wght@300;400;500&display=swap');
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Accent palettes — switchable via Tweaks */
+  --green-primary: #3e5c4a;
+  --green-deep:    #2a4335;
+  --green-soft:    #eaefe9;
+  --haki-primary:  #5c5e3f;
+  --haki-deep:     #3f4129;
+  --haki-soft:     #eeede3;
+  --toprak-primary:#7b5e19;
+  --toprak-deep:   #5a4412;
+  --toprak-soft:   #f1ecdf;
+
+  /* Active accent (overridden by theme) */
+  --accent:        #3e5c4a;
+  --accent-deep:   #2a4335;
+  --accent-soft:   #eaefe9;
+
+  /* Neutrals */
+  --ink:           #1f2320;
+  --ink-60:        #5a615c;
+  --ink-40:        #8b918c;
+  --ink-20:        #c9ccc9;
+  --paper:         #faf9f6;
+  --paper-warm:    #f4f1ea;
+  --line:          rgba(31,35,32,0.12);
+
+  /* Fonts — switchable */
+  --font-display: "Cormorant Garamond", "Noto Serif Display", serif;
+  --font-body:    "Work Sans", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Font pairings */
+[data-fontpair="editorial"] {
+  --font-display: "Cormorant Garamond", serif;
+  --font-body: "Work Sans", sans-serif;
+}
+[data-fontpair="fraunces"] {
+  --font-display: "Fraunces", serif;
+  --font-body: "Work Sans", sans-serif;
+}
+[data-fontpair="noto"] {
+  --font-display: "Noto Serif Display", serif;
+  --font-body: "Work Sans", sans-serif;
 }
 
-html {
-  height: 100%;
-}
+/* Accent themes */
+[data-accent="green"]  { --accent: var(--green-primary);  --accent-deep: var(--green-deep);  --accent-soft: var(--green-soft);  }
+[data-accent="haki"]   { --accent: var(--haki-primary);   --accent-deep: var(--haki-deep);   --accent-soft: var(--haki-soft);   }
+[data-accent="toprak"] { --accent: var(--toprak-primary); --accent-deep: var(--toprak-deep); --accent-soft: var(--toprak-soft); }
 
-html,
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { scroll-behavior: smooth; }
 body {
-  max-width: 100vw;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  font-weight: 400;
+  line-height: 1.6;
   overflow-x: hidden;
 }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input, select, textarea { font-family: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
 
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+.serif { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; }
+.overline { font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; font-weight: 500; }
+.container { max-width: 1360px; margin: 0 auto; padding: 0 40px; }
+@media (max-width: 720px) { .container { padding: 0 20px; } }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
+/* Selection */
+::selection { background: var(--accent); color: var(--paper); }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+/* Fade animations */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeInSlow { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slowZoom { 0% { transform: scale(1.08); } 100% { transform: scale(1); } }
+.fade-in { animation: fadeIn 0.6s ease-out both; }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ink-20); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-40); }
