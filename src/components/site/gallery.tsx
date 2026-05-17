@@ -117,11 +117,11 @@ export function InstagramFeed() {
 export function FAQ() {
   const qs = [
     { q: 'Ne kadar önceden rezervasyon yapmalıyım?', a: 'Düğün gibi büyük etkinlikler için 3-6 ay önceden, küçük etkinlikler için 2-4 hafta önceden iletişime geçmenizi öneriyoruz. Yoğun sezon (Mayıs-Eylül) için erken rezervasyon önemli.' },
-    { q: 'Hangi şehirlerde hizmet veriyorsunuz?', a: 'Ana atölyemiz Antalya\'da. Antalya, İstanbul, İzmir, Bodrum ve Muğla bölgelerinde düzenli olarak hizmet veriyoruz. Diğer şehirler için özel fiyatlandırma yapıyoruz.' },
+    { q: 'Hangi şehirlerde hizmet veriyorsunuz?', a: 'Ana atölyemiz İstanbul Beyoğlu\'nda. İstanbul, Ankara, İzmir, Bursa ve Antalya bölgelerinde düzenli olarak hizmet veriyoruz. Diğer şehirler için özel fiyatlandırma yapıyoruz.' },
     { q: 'Konsept tasarımı ücretli mi?', a: 'İlk görüşme ve moodboard tamamen ücretsiz. Detaylı konsept dosyası ve teknik çizim gerekiyorsa, paket kapsamına göre değerlendirme yapıyoruz.' },
     { q: 'Kurutulmuş çiçek hediye setleri için minimum sipariş var mı?', a: 'Kurumsal kurutulmuş çiçek hediyeleri için minimum 10 adet sipariş alıyoruz. Butik hediyelerde minimum yok.' },
     { q: 'Özel Günlerim abonelik sistemini nasıl iptal ederim?', a: 'Takviminizi dilediğiniz zaman düzenleyebilir veya tamamen iptal edebilirsiniz. Henüz gönderilmemiş çiçekler için iade yapıyoruz.' },
-    { q: 'Son dakika sipariş alıyor musunuz?', a: 'Antalya içi aynı gün teslimat yapabiliyoruz (siparişe göre). Diğer şehirler için en az 48 saat önceden bilgi almamız gerekir.' },
+    { q: 'Son dakika sipariş alıyor musunuz?', a: 'İstanbul içi aynı gün teslimat yapabiliyoruz (siparişe göre). Diğer şehirler için en az 48 saat önceden bilgi almamız gerekir.' },
   ];
   const [open, setOpen] = useState(0);
   return (

@@ -20,9 +20,9 @@ export function Contact({ full = false }: { full?: boolean }) {
             </p>
 
             <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <ContactRow icon="MapPin" label="Atölye" value="Konyaaltı, Antalya · Liman Mah. No:14" />
-              <ContactRow icon="Phone" label="Telefon" value="+90 532 000 00 00" />
-              <ContactRow icon="Mail" label="E-posta" value="merhaba@cicegedair.com" />
+              <ContactRow icon="MapPin" label="Adres" value="Gümüşsuyu Mah. Mebusan Yokuşu No: 6/B, Beyoğlu/İstanbul" />
+              <ContactRow icon="Phone" label="Telefon" value="+90 531 212 32 67" />
+              <ContactRow icon="Mail" label="E-posta" value="info@cicegedair.com" />
               <ContactRow icon="Clock" label="Çalışma Saatleri" value="Pzt–Cmt · 09:00 – 19:00" />
               <ContactRow icon="Instagram" label="Instagram" value="@gaia.cicegedair" />
             </div>

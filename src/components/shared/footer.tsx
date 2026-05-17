@@ -32,12 +32,20 @@ export function Footer({ onQuote }: { onQuote?: () => void }) {
               <GaiaLogo size={42} color="#fff" stacked={false} tagline />
             </div>
             <p style={{ marginTop: 20, fontSize: 15, lineHeight: 1.6, opacity: 0.78, maxWidth: 360 }}>
-              Çiçeği bir tasarım nesnesi olarak düşünen butik atölye. Antalya'dan Türkiye'ye.
+              Çiçeği bir tasarım nesnesi olarak düşünen butik atölye. İstanbul'dan Türkiye'ye.
             </p>
+            <div style={{ marginTop: 20, fontSize: 14, lineHeight: 1.7, opacity: 0.8 }}>
+              <div>Gümüşsuyu Mah. Mebusan Yokuşu No: 6/B, Beyoğlu/İstanbul</div>
+              <div>
+                <a href="tel:+905312123267" style={{ color: 'inherit', textDecoration: 'none' }}>+90 531 212 32 67</a>
+                {' · '}
+                <a href="mailto:info@cicegedair.com" style={{ color: 'inherit', textDecoration: 'none' }}>info@cicegedair.com</a>
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-              <SocialIcon icon="Instagram" />
-              <SocialIcon icon="Whatsapp" />
-              <SocialIcon icon="Mail" />
+              <SocialIcon icon="Instagram" href="https://instagram.com/gaia.cicegedair" />
+              <SocialIcon icon="Whatsapp" href="https://wa.me/905312123267" />
+              <SocialIcon icon="Mail" href="mailto:info@cicegedair.com" />
             </div>
             {onQuote && (
               <button onClick={onQuote} style={{ marginTop: 24, fontSize: 13, color: '#fff', opacity: 0.85, background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
@@ -82,10 +90,15 @@ export function Footer({ onQuote }: { onQuote?: () => void }) {
   );
 }
 
-function SocialIcon({ icon }: { icon: string }) {
+function SocialIcon({ icon, href }: { icon: string; href?: string }) {
   const I = (Icons as any)[icon];
   return (
-    <a style={{ width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }}>
+    <a
+      href={href}
+      target={href && href.startsWith('http') ? '_blank' : undefined}
+      rel={href && href.startsWith('http') ? 'noopener noreferrer' : undefined}
+      style={{ width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }}
+    >
       <I size={16} />
     </a>
   );
