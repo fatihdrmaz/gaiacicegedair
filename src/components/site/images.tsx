@@ -15,23 +15,23 @@ export const palettes: Record<string, string[]> = {
 
 // Real photo URLs (Unsplash — free, direct hotlinking allowed)
 export const PHOTOS: Record<string, string> = {
-  // Hero / wedding
-  heroWedding: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1600&q=80',
-  heroTable: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1600&q=80',
-  heroCorporate: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?w=1600&q=80',
-  heroProposal: 'https://images.unsplash.com/photo-1508615070457-7baeba4003ab?w=1600&q=80',
-  heroDried: 'https://images.unsplash.com/photo-1604323990536-6e49834c6885?w=1600&q=80',
+  // Hero / wedding — gerçek konuya uygun Unsplash görselleri
+  heroWedding: 'https://images.unsplash.com/photo-1641834919507-b0271fe5186b?w=1600&q=80',
+  heroTable: 'https://images.unsplash.com/photo-1769812343285-ec0775437680?w=1600&q=80',
+  heroCorporate: 'https://images.unsplash.com/photo-1758714919725-d2740fc99f14?w=1600&q=80',
+  heroProposal: 'https://images.unsplash.com/photo-1589095181425-c038b3871b6a?w=1600&q=80',
+  heroDried: 'https://images.unsplash.com/photo-1675089728888-5a8a54a46a8d?w=1600&q=80',
 
-  // Services
-  sWedding: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=1200&q=80',
-  sCorporate: 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=1200&q=80',
-  sBirthday: 'https://images.unsplash.com/photo-1558636508-e0db3814bd1d?w=1200&q=80',
-  sProposal: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&q=80',
-  sBachelor: 'https://images.unsplash.com/photo-1530653333484-8a4b8c4b1d6f?w=1200&q=80',
-  sVenue: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=80',
-  sCongress: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=1200&q=80',
-  sEvent: 'https://images.unsplash.com/photo-1530023367847-a683933f4172?w=1200&q=80',
-  sLandscape: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1200&q=80',
+  // Services — her hizmet için konuya uygun görsel
+  sWedding: 'https://images.unsplash.com/photo-1738025277281-582526f674c4?w=1200&q=80',
+  sCorporate: 'https://images.unsplash.com/photo-1765305596432-5fdc41b64d8e?w=1200&q=80',
+  sBirthday: 'https://images.unsplash.com/photo-1608935387815-8963f8d5cf88?w=1200&q=80',
+  sProposal: 'https://images.unsplash.com/photo-1672724332593-9ab35de16efd?w=1200&q=80',
+  sBachelor: 'https://images.unsplash.com/photo-1719776427907-fe38be9648dd?w=1200&q=80',
+  sVenue: 'https://images.unsplash.com/photo-1773745060497-4cc1df774c72?w=1200&q=80',
+  sCongress: 'https://images.unsplash.com/photo-1762968274962-20c12e6e8ecd?w=1200&q=80',
+  sEvent: 'https://images.unsplash.com/photo-1761110787206-2cc164e4913c?w=1200&q=80',
+  sLandscape: 'https://images.unsplash.com/photo-1636489571981-e46df15657ce?w=1200&q=80',
 
   // Gallery
   gLobby: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200&q=80',
