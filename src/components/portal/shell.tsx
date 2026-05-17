@@ -14,7 +14,7 @@ type NavItem = { id: string; label: string; icon: string; badge?: number; href: 
 const companyNav: NavItem[] = [
   { id: 'dashboard', label: 'Panel',      icon: 'Bouquet',  href: '/portal/dashboard' },
   { id: 'calendar',  label: 'Takvim',     icon: 'Calendar', href: '/portal/takvim' },
-  { id: 'orders',    label: 'Siparişler', icon: 'Package',  badge: 4, href: '/portal/siparisler' },
+  { id: 'orders',    label: 'Siparişler', icon: 'Package',  href: '/portal/siparisler' },
   { id: 'addresses', label: 'Adresler',   icon: 'MapPin',   href: '/portal/adresler' },
   { id: 'employees', label: 'Çalışanlar', icon: 'User',     href: '/portal/calisanlar' },
   { id: 'billing',   label: 'Faturalama', icon: 'Gift',     href: '/portal/faturalama' },
@@ -22,11 +22,12 @@ const companyNav: NavItem[] = [
 ];
 
 const adminNav: NavItem[] = [
-  { id: 'admin',          label: 'Admin Panel', icon: 'Settings', href: '/admin' },
-  { id: 'admin-pending',  label: 'Onaylar',     icon: 'Check',    badge: 3, href: '/admin/bekleyen-firmalar' },
-  { id: 'admin-kanban',   label: 'Kanban',      icon: 'Package',  href: '/admin/kanban' },
-  { id: 'admin-capacity', label: 'Atölye',      icon: 'Hall',     href: '/admin/atolye' },
-  { id: 'admin-blog',     label: 'Blog',        icon: 'Star',     href: '/admin/blog' },
+  { id: 'admin',          label: 'Admin Panel',  icon: 'Settings', href: '/admin' },
+  { id: 'admin-pending',  label: 'Onaylar',      icon: 'Check',    href: '/admin/bekleyen-firmalar' },
+  { id: 'admin-kanban',   label: 'Kanban',       icon: 'Package',  href: '/admin/kanban' },
+  { id: 'admin-b2c',      label: 'Özel Günler',  icon: 'Calendar', href: '/admin/ozel-gunler' },
+  { id: 'admin-capacity', label: 'Atölye',       icon: 'Hall',     href: '/admin/atolye' },
+  { id: 'admin-blog',     label: 'Blog',         icon: 'Star',     href: '/admin/blog' },
 ]
 
 const titleMap: Record<string, string> = {
@@ -41,20 +42,25 @@ const titleMap: Record<string, string> = {
   '/admin':                 'Admin Panel',
   '/admin/bekleyen-firmalar':'Bekleyen Firma Onayları',
   '/admin/kanban':          'Sipariş Kanban',
+  '/admin/ozel-gunler':     'B2C Özel Gün Siparişleri',
   '/admin/atolye':          'Atölye Kapasite',
   '/admin/blog':            'Blog Yönetimi',
 };
 
-export function PortalShell({ children, auth, isAdmin }: {
+export function PortalShell({ children, auth, isAdmin, badges }: {
   children: React.ReactNode;
   auth?: { name?: string; company?: string; type?: string } | null;
   isAdmin?: boolean;
+  badges?: Record<string, number>;
 }) {
   const pathname = usePathname() || '/';
   const router = useRouter();
   const isAuth = pathname.startsWith('/portal/giris') || pathname.startsWith('/portal/kayit') || pathname.startsWith('/portal/onay-bekliyor');
 
-  const nav = isAdmin ? adminNav : companyNav;
+  const nav = (isAdmin ? adminNav : companyNav).map((item) => ({
+    ...item,
+    badge: badges?.[item.id] || undefined,
+  }));
 
   const onLogout = async () => {
     try {

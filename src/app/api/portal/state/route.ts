@@ -7,6 +7,7 @@ import {
   mapAddress,
   mapEmployee,
   mapPending,
+  mapB2COrder,
 } from "@/lib/portal-map";
 
 const EMPTY: PortalState = {
@@ -16,6 +17,7 @@ const EMPTY: PortalState = {
   addresses: [],
   employees: [],
   pending: [],
+  b2cOrders: [],
 };
 
 const ORDER_SELECT =
@@ -74,13 +76,21 @@ export async function GET() {
   }
 
   let pending: PortalState["pending"] = [];
+  let b2cOrders: PortalState["b2cOrders"] = [];
   if (isAdmin) {
-    const { data: pendingRows } = await supabase
-      .from("companies")
-      .select("*")
-      .eq("status", "pending")
-      .order("created_at", { ascending: true });
+    const [{ data: pendingRows }, { data: b2cRows }] = await Promise.all([
+      supabase
+        .from("companies")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("b2c_orders")
+        .select("*, b2c_order_items(*)")
+        .order("created_at", { ascending: false }),
+    ]);
     pending = (pendingRows || []).map(mapPending);
+    b2cOrders = (b2cRows || []).map(mapB2COrder);
   }
 
   const orders = (orderRows || []).map(mapOrder);
@@ -101,6 +111,7 @@ export async function GET() {
     addresses,
     employees,
     pending,
+    b2cOrders,
   };
 
   return NextResponse.json(state);

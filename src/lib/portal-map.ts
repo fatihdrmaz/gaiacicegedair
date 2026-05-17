@@ -5,6 +5,7 @@ import type {
   PortalAddress,
   PortalEmployee,
   PortalPending,
+  B2COrder,
 } from "@/lib/portal-data";
 
 export const TEMPLATE_LABELS: Record<string, string> = {
@@ -159,5 +160,57 @@ export function mapPending(row: CompanyRow): PortalPending {
     appliedAt: (row.created_at || "").slice(0, 10),
     sector: row.sector || "—",
     size: row.size || "—",
+  };
+}
+
+type B2CItemRow = {
+  id: string;
+  day_name: string | null;
+  occasion: string | null;
+  event_date: string | null;
+  recipient: string | null;
+  address: string | null;
+  delivery_time: string | null;
+  concept: string | null;
+  note: string | null;
+  package: string | null;
+  package_price: number | null;
+  status: string | null;
+};
+
+type B2COrderRow = {
+  id: string;
+  buyer_name: string | null;
+  buyer_email: string | null;
+  status: string | null;
+  total_amount: number | null;
+  paid_at: string | null;
+  created_at: string;
+  b2c_order_items?: B2CItemRow[] | null;
+};
+
+export function mapB2COrder(row: B2COrderRow): B2COrder {
+  return {
+    id: row.id,
+    buyerName: row.buyer_name || "—",
+    buyerEmail: row.buyer_email || "—",
+    status: row.status || "pending",
+    totalAmount: Number(row.total_amount) || 0,
+    paidAt: row.paid_at ? row.paid_at.slice(0, 10) : "",
+    createdAt: (row.created_at || "").slice(0, 10),
+    items: (row.b2c_order_items || []).map((it) => ({
+      id: it.id,
+      dayName: it.day_name || "—",
+      occasion: it.occasion || "—",
+      eventDate: it.event_date || "",
+      recipient: it.recipient || "—",
+      address: it.address || "—",
+      deliveryTime: it.delivery_time || "",
+      concept: it.concept || "—",
+      note: it.note || "",
+      package: it.package || "—",
+      packagePrice: Number(it.package_price) || 0,
+      status: it.status || "pending",
+    })),
   };
 }

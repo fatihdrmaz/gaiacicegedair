@@ -67,6 +67,32 @@ export type PortalAuth = {
   role?: string;
 } | null;
 
+export type B2COrderItem = {
+  id: string;
+  dayName: string;
+  occasion: string;
+  eventDate: string;
+  recipient: string;
+  address: string;
+  deliveryTime: string;
+  concept: string;
+  note: string;
+  package: string;
+  packagePrice: number;
+  status: string;
+};
+
+export type B2COrder = {
+  id: string;
+  buyerName: string;
+  buyerEmail: string;
+  status: string;
+  totalAmount: number;
+  paidAt: string;
+  createdAt: string;
+  items: B2COrderItem[];
+};
+
 export type PortalState = {
   auth: PortalAuth;
   orders: PortalOrder[];
@@ -74,6 +100,7 @@ export type PortalState = {
   addresses: PortalAddress[];
   employees: PortalEmployee[];
   pending: PortalPending[];
+  b2cOrders: B2COrder[];
 };
 
 export function mockOrders(): PortalOrder[] {
@@ -146,5 +173,6 @@ export function getMockPortalState(): PortalState {
     addresses: mockAddresses(),
     employees: mockEmployees(),
     pending: mockPending(),
+    b2cOrders: [],
   };
 }

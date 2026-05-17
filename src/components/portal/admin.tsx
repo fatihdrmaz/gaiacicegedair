@@ -653,3 +653,96 @@ export function PortalAdminBlog() {
     </div>
   );
 }
+
+// ============ B2C Özel Gün Siparişleri ============
+const B2C_STATUS: Record<string, { label: string; bg: string; fg: string }> = {
+  pending:    { label: 'Ödeme bekliyor', bg: '#FFF4E5', fg: '#995200' },
+  paid:       { label: 'Ödendi',         bg: '#E5F0E9', fg: '#3a6a4a' },
+  processing: { label: 'Hazırlanıyor',   bg: '#E5F0FF', fg: '#1F5DAB' },
+  delivered:  { label: 'Teslim edildi',  bg: 'var(--accent-soft)', fg: 'var(--accent-deep)' },
+};
+const B2C_NEXT: Record<string, string> = {
+  pending: 'processing',
+  paid: 'processing',
+  processing: 'delivered',
+};
+
+export function PortalAdminB2C({ state }: { state: PortalState }) {
+  const orders = state.b2cOrders || [];
+  const [busy, setBusy] = useState('');
+
+  const advance = async (id: string, current: string) => {
+    const next = B2C_NEXT[current];
+    if (!next) return;
+    setBusy(id);
+    try {
+      const res = await fetch('/api/portal/b2c', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id, status: next }),
+      });
+      if (res.ok) { window.location.reload(); return; }
+    } catch { /* yoksay */ }
+    setBusy('');
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <p style={{ color: 'var(--ink-60)', fontSize: 14 }}>
+        Bireysel müşterilerin “Özel Günlerim” aboneliğinden gelen siparişleri. Her sipariş bir veya birden çok özel gün içerir.
+      </p>
+
+      {orders.length === 0 && (
+        <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-60)' }}>Henüz B2C siparişi yok.</div>
+      )}
+
+      {orders.map(o => {
+        const st = B2C_STATUS[o.status] || B2C_STATUS.pending;
+        const next = B2C_NEXT[o.status];
+        return (
+          <PortalCard key={o.id} padding={24}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <Avatar name={o.buyerName} size={46} />
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 500 }}>{o.buyerName}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 2 }}>{o.buyerEmail}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ padding: '4px 10px', fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 500, borderRadius: 999, background: st.bg, color: st.fg }}>
+                  {st.label}
+                </span>
+                <div className="serif" style={{ fontSize: 22 }}>{fmtTL(o.totalAmount)}</div>
+                {next && (
+                  <PortalButton size="sm" variant="primary" disabled={busy === o.id} onClick={() => advance(o.id, o.status)}>
+                    {busy === o.id ? '…' : (next === 'processing' ? 'Hazırlığa Al' : 'Teslim Edildi')}
+                  </PortalButton>
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {o.items.map(it => (
+                <div key={it.id} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 110px', gap: 12, alignItems: 'center', fontSize: 13 }}>
+                  <div>
+                    <div style={{ fontWeight: 500 }}>{it.dayName}</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--ink-60)' }}>{it.occasion} · {it.concept}</div>
+                  </div>
+                  <div style={{ color: 'var(--ink-60)' }}>{it.recipient}</div>
+                  <div style={{ color: 'var(--ink-60)' }}>{it.eventDate || '—'} · {it.deliveryTime}</div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ textTransform: 'capitalize' }}>{it.package}</span> · {fmtTL(it.packagePrice)}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 12, fontSize: 11.5, color: 'var(--ink-40)' }}>
+              Sipariş: {o.createdAt}{o.paidAt ? ` · Ödeme: ${o.paidAt}` : ''}
+            </div>
+          </PortalCard>
+        );
+      })}
+    </div>
+  );
+}

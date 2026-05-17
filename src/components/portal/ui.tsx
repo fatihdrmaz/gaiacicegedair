@@ -19,9 +19,10 @@ export function getPortalState(): PortalState {
       addresses: s.addresses || base.addresses,
       employees: s.employees || base.employees,
       pending: s.pending || base.pending,
+      b2cOrders: s.b2cOrders || base.b2cOrders,
     };
   } catch {
-    return { auth: null, orders: [], events: [], addresses: [], employees: [], pending: [] };
+    return { auth: null, orders: [], events: [], addresses: [], employees: [], pending: [], b2cOrders: [] };
   }
 }
 

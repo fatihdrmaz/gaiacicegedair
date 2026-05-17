@@ -11,6 +11,7 @@ const EMPTY: PortalState = {
   addresses: [],
   employees: [],
   pending: [],
+  b2cOrders: [],
 };
 
 export function PortalPageShell({
@@ -56,6 +57,20 @@ export function PortalPageShell({
     );
   }
 
+  const activeOrders = state.orders.filter(
+    (o) => !['delivered', 'rejected'].includes(o.status),
+  ).length;
+  const activeB2C = state.b2cOrders.filter(
+    (o) => o.status !== 'delivered',
+  ).length;
+
+  const badges: Record<string, number> = {
+    orders: activeOrders,
+    'admin-pending': state.pending.length,
+    'admin-kanban': activeOrders,
+    'admin-b2c': activeB2C,
+  };
+
   return (
     <PortalShell
       auth={{
@@ -63,6 +78,7 @@ export function PortalPageShell({
         company: state.auth?.company ?? 'GAIA',
       }}
       isAdmin={isAdmin ?? state.auth?.type === 'admin'}
+      badges={badges}
     >
       {children(state)}
     </PortalShell>
