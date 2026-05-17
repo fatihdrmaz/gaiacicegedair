@@ -17,23 +17,68 @@ export function PortalAdminDashboard({ state }: { state: PortalState }) {
   const router = useRouter();
   const orders = state.orders || [];
   const pending = state.pending || [];
+  const b2cOrders = state.b2cOrders || [];
 
-  const today = orders.filter(o => o.date === '2026-05-18' || o.date === '2026-05-22');
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const tmr = new Date();
+  tmr.setDate(tmr.getDate() + 1);
+  const tmrIso = tmr.toISOString().slice(0, 10);
+  const monthKey = todayIso.slice(0, 7);
+
+  const activeOrders = orders.filter(o => ['pending', 'approved', 'production', 'shipping'].includes(o.status));
+  const activeB2C = b2cOrders.filter(o => o.status !== 'delivered');
+  const todayDeliver = orders.filter(o => o.date === todayIso);
+
+  // Aylık ciro — bu ayın kurumsal + B2C siparişleri
+  const revenue =
+    orders.filter(o => (o.date || '').startsWith(monthKey)).reduce((s, o) => s + o.amount, 0) +
+    b2cOrders.filter(o => (o.createdAt || '').startsWith(monthKey)).reduce((s, o) => s + o.totalAmount, 0);
+
+  // Yarınki üretim — yarın teslim/etkinlik
+  const tmrCorporate = orders.filter(o => o.date === tmrIso).length;
+  const tmrB2C = b2cOrders.flatMap(o => o.items).filter(it => it.eventDate === tmrIso).length;
+  const tmrTotal = tmrCorporate + tmrB2C;
+
+  // Son aktiviteler — gerçek veriden, tarihe göre
+  type Act = { t: string; sub: string; date: string; type: 'check' | 'user' | 'package' };
+  const acts: Act[] = [
+    ...orders.map<Act>(o => ({
+      t: `${o.company} · ${o.type}`,
+      sub: 'Kurumsal sipariş',
+      date: o.createdAt,
+      type: 'package',
+    })),
+    ...b2cOrders.map<Act>(o => ({
+      t: `${o.buyerName} · ${o.items.length} özel gün`,
+      sub: 'B2C sipariş',
+      date: o.createdAt,
+      type: 'package',
+    })),
+    ...pending.map<Act>(p => ({
+      t: `${p.company} kayıt başvurusu`,
+      sub: 'Yeni firma',
+      date: p.appliedAt,
+      type: 'user',
+    })),
+  ]
+    .filter(a => a.date)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 6);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div>
         <h2 className="serif" style={{ fontSize: 32, fontWeight: 500, lineHeight: 1.1 }}>GAIA Yönetim Paneli</h2>
         <p style={{ marginTop: 6, color: 'var(--ink-60)', fontSize: 15 }}>
-          {pending.length} firma onay bekliyor · {orders.filter(o => o.status === 'pending' || o.status === 'production').length} aktif sipariş işleniyor
+          {pending.length} firma onay bekliyor · {activeOrders.length} aktif kurumsal · {activeB2C.length} aktif B2C sipariş
         </p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }} className="stats-grid">
         <StatCard label="Bekleyen Firma" value={pending.length} hint="Onayınızı bekliyor" icon="Check" />
-        <StatCard label="Aktif Sipariş" value={orders.filter(o => ['pending', 'approved', 'production', 'shipping'].includes(o.status)).length} hint="Bu hafta" icon="Package" />
-        <StatCard label="Bugün Teslim" value={today.length} hint="3 atölyede" icon="Hall" />
-        <StatCard label="Aylık Ciro" value={fmtTL(238400)} hint="Geçen aya göre +18%" trend="up" icon="Gift" />
+        <StatCard label="Aktif Sipariş" value={activeOrders.length + activeB2C.length} hint="Kurumsal + B2C" icon="Package" />
+        <StatCard label="Bugün Teslim" value={todayDeliver.length} hint={todayIso} icon="Hall" />
+        <StatCard label="Aylık Ciro" value={fmtTL(revenue)} hint="Bu ayki siparişler" icon="Gift" />
       </div>
 
       <PortalCard padding={0}>
@@ -44,11 +89,13 @@ export function PortalAdminDashboard({ state }: { state: PortalState }) {
           </div>
           <PortalButton variant="ghost" size="sm" onClick={() => router.push('/admin/bekleyen-firmalar')}>Tümü →</PortalButton>
         </div>
-        {pending.map((p, i) => (
-          <div key={p.id} style={{
-            display: 'grid', gridTemplateColumns: '60px 1.5fr 1.5fr 1fr 1fr 200px',
-            padding: '18px 24px', gap: 16, alignItems: 'center',
-            borderBottom: i < pending.length - 1 ? '1px solid var(--line)' : 'none',
+        {pending.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-60)', fontSize: 14 }}>Bekleyen başvuru yok.</div>
+        ) : pending.slice(0, 5).map((p, i) => (
+          <div key={p.id} onClick={() => router.push('/admin/bekleyen-firmalar')} style={{
+            display: 'grid', gridTemplateColumns: '60px 1.5fr 1.5fr 1fr 1fr',
+            padding: '18px 24px', gap: 16, alignItems: 'center', cursor: 'pointer',
+            borderBottom: i < Math.min(pending.length, 5) - 1 ? '1px solid var(--line)' : 'none',
           }} className="admin-row">
             <Avatar name={p.company} size={42} bg={['#5c5e3f','#7b5e19','#3e5c4a'][i % 3]} />
             <div>
@@ -61,10 +108,6 @@ export function PortalAdminDashboard({ state }: { state: PortalState }) {
             </div>
             <div style={{ fontSize: 13, color: 'var(--ink-60)' }}>{p.size} çalışan</div>
             <div style={{ fontSize: 12, color: 'var(--ink-40)' }}>{relTime(p.appliedAt)}</div>
-            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-              <PortalButton size="sm" variant="ghost">Detay</PortalButton>
-              <PortalButton size="sm" variant="primary">Onayla</PortalButton>
-            </div>
           </div>
         ))}
       </PortalCard>
@@ -72,50 +115,48 @@ export function PortalAdminDashboard({ state }: { state: PortalState }) {
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }} className="dash-grid">
         <PortalCard padding={28}>
           <h3 className="serif" style={{ fontSize: 20, fontWeight: 500, marginBottom: 22 }}>Son Aktiviteler</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {[
-              { t: 'Akbank · O-2026-0044 onaylandı',       who: 'Murat (GAIA)',  when: '12 dk önce', type: 'check' },
-              { t: 'Limak Holding kayıt başvurusu aldı',   who: 'Sistem',         when: '38 dk önce', type: 'user' },
-              { t: 'Akbank · O-2026-0045 yeni sipariş',    who: 'Ayşe (Akbank)',  when: '1 saat önce', type: 'package' },
-              { t: 'Akbank · O-2026-0041 teslim edildi',   who: 'Mert (Atölye)',  when: '2 saat önce', type: 'check' },
-              { t: 'NuAgent Ajans kayıt başvurusu aldı',   who: 'Sistem',         when: '5 saat önce', type: 'user' },
-            ].map((a, i) => (
-              <div key={i} style={{ display: 'flex', gap: 14, padding: '12px 0', borderBottom: i < 4 ? '1px solid var(--line)' : 'none' }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                  background: 'var(--accent-soft)', color: 'var(--accent-deep)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {a.type === 'check' && <Icons.Check size={14} />}
-                  {a.type === 'user' && <Icons.User size={14} />}
-                  {a.type === 'package' && <Icons.Package size={14} />}
+          {acts.length === 0 ? (
+            <div style={{ fontSize: 14, color: 'var(--ink-60)' }}>Henüz aktivite yok.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {acts.map((a, i) => (
+                <div key={i} style={{ display: 'flex', gap: 14, padding: '12px 0', borderBottom: i < acts.length - 1 ? '1px solid var(--line)' : 'none' }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                    background: 'var(--accent-soft)', color: 'var(--accent-deep)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {a.type === 'check' && <Icons.Check size={14} />}
+                    {a.type === 'user' && <Icons.User size={14} />}
+                    {a.type === 'package' && <Icons.Package size={14} />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13.5 }}>{a.t}</div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-40)', marginTop: 2 }}>{a.sub} · {fmtDay(a.date)}</div>
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13.5 }}>{a.t}</div>
-                  <div style={{ fontSize: 12, color: 'var(--ink-40)', marginTop: 2 }}>{a.who} · {a.when}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </PortalCard>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           <PortalCard padding={24} style={{ background: 'var(--accent)', color: '#fff' }}>
             <div className="overline" style={{ color: 'rgba(255,255,255,0.85)' }}>Yarınki Üretim</div>
-            <div className="serif" style={{ fontSize: 44, marginTop: 10, lineHeight: 1 }}>19</div>
-            <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>12 lobi · 5 hediye · 2 etkinlik</div>
+            <div className="serif" style={{ fontSize: 44, marginTop: 10, lineHeight: 1 }}>{tmrTotal}</div>
+            <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>{tmrCorporate} kurumsal · {tmrB2C} özel gün</div>
             <PortalButton variant="primary" size="sm" style={{ marginTop: 16, background: '#fff', color: 'var(--accent-deep)', border: 'none' }} onClick={() => router.push('/admin/atolye')}>
               Atölyeyi Aç →
             </PortalButton>
           </PortalCard>
           <PortalCard padding={24}>
-            <div className="overline" style={{ color: 'var(--ink-60)' }}>Kanban</div>
-            <h4 className="serif" style={{ fontSize: 22, fontWeight: 500, marginTop: 8 }}>Sipariş Akışı</h4>
+            <div className="overline" style={{ color: 'var(--ink-60)' }}>Takvim</div>
+            <h4 className="serif" style={{ fontSize: 22, fontWeight: 500, marginTop: 8 }}>Tüm Talepler</h4>
             <p style={{ fontSize: 13, color: 'var(--ink-60)', marginTop: 6, lineHeight: 1.5 }}>
-              Tüm aktif siparişleri kanban tablosunda yönetin.
+              Kurumsal ve B2C tüm teslimatları tek takvimde görün.
             </p>
-            <PortalButton variant="secondary" size="md" style={{ marginTop: 18 }} onClick={() => router.push('/admin/kanban')} iconRight={<Icons.Arrow size={14} />}>
-              Kanban'ı Aç
+            <PortalButton variant="secondary" size="md" style={{ marginTop: 18 }} onClick={() => router.push('/admin/takvim')} iconRight={<Icons.Arrow size={14} />}>
+              Takvimi Aç
             </PortalButton>
           </PortalCard>
         </div>

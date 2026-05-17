@@ -194,15 +194,15 @@ export function PortalDashboard({ state }: { state: PortalState }) {
 }
 
 // ============ Calendar ============
-export function PortalCalendar({ state }: { state: PortalState }) {
+export function PortalCalendar({ state, readOnly }: { state: PortalState; readOnly?: boolean }) {
   const router = useRouter();
   const [view, setView] = useState<'month' | 'year' | 'week'>('month');
-  const [cursor, setCursor] = useState<Date>(new Date(2026, 4, 1));
-  const events = state.events || [];
+  const [cursor, setCursor] = useState<Date>(new Date());
   const orders = state.orders || [];
+  const b2cOrders = state.b2cOrders || [];
 
   const allItems: any[] = [
-    ...events.map(e => ({ ...e, _src: 'event' })),
+    // Kurumsal siparişler
     ...orders.map(o => ({
       id: o.id, date: o.date, title: o.type,
       type: o.type.toLowerCase().includes('lobi') ? 'lobi'
@@ -212,6 +212,14 @@ export function PortalCalendar({ state }: { state: PortalState }) {
           : o.type.toLowerCase().includes('karşılama') ? 'event' : 'gift',
       addr: o.recipient, _src: 'order',
     })),
+    // B2C özel gün siparişleri (yalnızca admin state'inde dolu gelir)
+    ...b2cOrders.flatMap(o =>
+      o.items.map(it => ({
+        id: o.id, date: it.eventDate,
+        title: `${it.dayName} · ${o.buyerName}`,
+        type: 'special', addr: it.recipient, _src: 'b2c',
+      })),
+    ),
   ];
 
   return (
@@ -267,9 +275,11 @@ export function PortalCalendar({ state }: { state: PortalState }) {
             ))}
           </div>
 
-          <PortalButton variant="primary" size="md" icon={<Icons.Plus size={14} />} onClick={() => router.push('/portal/siparisler/yeni')}>
-            Yeni Etkinlik
-          </PortalButton>
+          {!readOnly && (
+            <PortalButton variant="primary" size="md" icon={<Icons.Plus size={14} />} onClick={() => router.push('/portal/siparisler/yeni')}>
+              Yeni Etkinlik
+            </PortalButton>
+          )}
         </div>
       </PortalCard>
 
