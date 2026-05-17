@@ -37,7 +37,24 @@ export function PortalPageShell({
     };
   }, []);
 
-  if (!state) return null;
+  if (!state) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'var(--paper)',
+          color: 'var(--ink-60)',
+          fontSize: 14,
+          letterSpacing: '0.1em',
+        }}
+      >
+        Yükleniyor…
+      </div>
+    );
+  }
 
   return (
     <PortalShell
