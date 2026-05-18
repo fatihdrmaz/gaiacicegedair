@@ -360,14 +360,29 @@ export function PortalAdminKanban({ state }: { state: PortalState }) {
 }
 
 // ============ Atölye Kapasite ============
+const CAP_STATUS: Record<string, { label: string; bg: string; fg: string }> = {
+  pending:    { label: 'İncelemede', bg: '#FFF4E5', fg: '#995200' },
+  approved:   { label: 'Onaylandı',  bg: '#E5F0FF', fg: '#1F5DAB' },
+  production: { label: 'Atölyede',   bg: 'var(--accent-soft)', fg: 'var(--accent-deep)' },
+  shipping:   { label: 'Yolda',      bg: '#F0E5FF', fg: '#5C2D9B' },
+  delivered:  { label: 'Teslim',     bg: '#E5F0E9', fg: '#3a6a4a' },
+  paid:       { label: 'Ödendi',     bg: '#E5F0E9', fg: '#3a6a4a' },
+  processing: { label: 'Hazırlanıyor', bg: 'var(--accent-soft)', fg: 'var(--accent-deep)' },
+};
+
 export function PortalAdminCapacity({ state }: { state: PortalState }) {
   const orders = state.orders || [];
-  const b2cItems = (state.b2cOrders || []).flatMap(o => o.items);
+  const b2cOrders = state.b2cOrders || [];
+  const b2cItems = b2cOrders.flatMap(o =>
+    o.items.map(it => ({ ...it, buyer: o.buyerName })),
+  );
 
-  // Bugünden başlayan 14 günlük pencere — yerel tarih (UTC kayması olmadan)
+  // Yerel tarih (UTC kayması olmadan)
   const toIso = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const todayIso = toIso(new Date());
 
+  // Bugünden başlayan 14 günlük pencere
   const days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -378,18 +393,55 @@ export function PortalAdminCapacity({ state }: { state: PortalState }) {
     return { iso, d, count: corporate.length + b2c.length };
   });
 
-  const team = [
-    { name: 'Mert Sönmez',  role: 'Atölye Sorumlusu',   cap: 8,  current: 6, photo: 'team3' },
-    { name: 'Elif Yalçın',  role: 'Tasarım',            cap: 5,  current: 3, photo: 'team2' },
-    { name: 'Naz Güner',    role: 'Müşteri İlişkileri', cap: 10, current: 7, photo: 'team4' },
-    { name: 'Derya Kaptan', role: 'Konsept',            cap: 4,  current: 4, photo: 'team1' },
+  const todayCount = days[0]?.count ?? 0;
+  const week = days.slice(0, 7).reduce((s, d) => s + d.count, 0);
+  const inWorkshop = orders.filter(o => o.status === 'production').length;
+  const activeTotal =
+    orders.filter(o => !['delivered', 'rejected'].includes(o.status)).length +
+    b2cOrders.filter(o => o.status !== 'delivered').length;
+
+  // Sipariş durum dağılımı (kurumsal)
+  const pipeline = [
+    { key: 'pending', label: 'İncelemede' },
+    { key: 'approved', label: 'Onaylandı' },
+    { key: 'production', label: 'Atölyede' },
+    { key: 'shipping', label: 'Yolda' },
+    { key: 'delivered', label: 'Teslim' },
+  ].map(s => ({ ...s, n: orders.filter(o => o.status === s.key).length }));
+  const pipelineMax = Math.max(1, ...pipeline.map(p => p.n));
+
+  // Bugünün teslimatları
+  const todayDeliveries = [
+    ...orders.filter(o => o.date === todayIso).map(o => ({
+      type: o.type, who: o.recipient, kind: 'Kurumsal',
+    })),
+    ...b2cItems.filter(it => it.eventDate === todayIso).map(it => ({
+      type: it.dayName, who: it.recipient, kind: 'Özel gün',
+    })),
   ];
+
+  // Üretim listesi — kurumsal aktif + yaklaşan B2C, tarihe göre
+  const production = [
+    ...orders
+      .filter(o => ['pending', 'approved', 'production'].includes(o.status))
+      .map(o => ({ id: o.id, date: o.date, type: o.type, who: o.recipient, status: o.status, kind: 'Kurumsal' })),
+    ...b2cItems
+      .filter(it => it.eventDate >= todayIso && it.status !== 'delivered')
+      .map(it => ({ id: it.id, date: it.eventDate, type: it.dayName, who: it.recipient, status: it.status, kind: 'Özel gün' })),
+  ].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <p style={{ color: 'var(--ink-60)', fontSize: 14 }}>
-        Atölye kapasitesi, ekip yükü ve kurye rotaları — günlük operasyonel görünüm.
+        Atölye iş yükü ve teslimat planı — kurumsal siparişler ve B2C özel günler birlikte.
       </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }} className="stats-grid">
+        <StatCard label="Bugün Teslim" value={todayCount} hint={todayIso} icon="Hall" />
+        <StatCard label="Bu Hafta" value={week} hint="7 günlük teslimat" icon="Calendar" />
+        <StatCard label="Atölyede" value={inWorkshop} hint="Hazırlanıyor" icon="Package" />
+        <StatCard label="Aktif Sipariş" value={activeTotal} hint="Kurumsal + B2C" icon="Star" />
+      </div>
 
       <PortalCard padding={28}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
@@ -429,83 +481,83 @@ export function PortalAdminCapacity({ state }: { state: PortalState }) {
         </div>
       </PortalCard>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }} className="dash-grid">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }} className="dash-grid">
         <PortalCard padding={28}>
-          <h3 className="serif" style={{ fontSize: 20, fontWeight: 500, marginBottom: 22 }}>Ekip Yükü</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {team.map((m, i) => {
-              const pct = (m.current / m.cap) * 100;
-              return (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '48px 1fr 100px 60px', gap: 16, alignItems: 'center' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden' }}>
-                    <img src={(PHOTOS as any)[m.photo]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 500 }}>{m.name}</div>
-                        <div style={{ fontSize: 11.5, color: 'var(--ink-60)' }}>{m.role}</div>
-                      </div>
-                    </div>
-                    <div style={{ height: 6, background: 'var(--paper-warm)', borderRadius: 999, overflow: 'hidden', marginTop: 6 }}>
-                      <div style={{ height: '100%', width: pct + '%', background: pct >= 100 ? '#a85050' : pct >= 80 ? '#c89e58' : 'var(--accent)' }} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 13, textAlign: 'right' }}>{m.current} / {m.cap}</div>
-                  <div style={{ fontSize: 11.5, color: pct >= 100 ? '#a85050' : 'var(--ink-60)', textAlign: 'right' }}>
-                    {pct >= 100 ? 'Dolu' : pct >= 80 ? 'Yoğun' : 'Müsait'}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </PortalCard>
-
-        <PortalCard padding={28}>
-          <h3 className="serif" style={{ fontSize: 20, fontWeight: 500, marginBottom: 22 }}>Yarınki Kurye Rotaları</h3>
+          <h3 className="serif" style={{ fontSize: 20, fontWeight: 500, marginBottom: 22 }}>Sipariş Durum Dağılımı</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[
-              { name: 'Rota 1 · Avrupa Yakası',  stops: 7, time: '07:30 — 12:00', driver: 'Kemal' },
-              { name: 'Rota 2 · Anadolu Yakası', stops: 5, time: '08:00 — 11:30', driver: 'Hakan' },
-              { name: 'Rota 3 · VIP & Otel',      stops: 3, time: '09:00 — 11:00', driver: 'Selim' },
-            ].map((r, i) => (
-              <div key={i} style={{ padding: 14, background: 'var(--paper-warm)', borderRadius: 6 }}>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>{r.name}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--ink-60)', marginTop: 4 }}>
-                  {r.stops} durak · {r.time} · {r.driver}
+            {pipeline.map(p => (
+              <div key={p.key}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
+                  <span>{p.label}</span>
+                  <span style={{ color: 'var(--ink-60)' }}>{p.n} sipariş</span>
+                </div>
+                <div style={{ height: 8, background: 'var(--paper-warm)', borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: ((p.n / pipelineMax) * 100) + '%', background: 'var(--accent)' }} />
                 </div>
               </div>
             ))}
           </div>
+        </PortalCard>
+
+        <PortalCard padding={28}>
+          <h3 className="serif" style={{ fontSize: 20, fontWeight: 500, marginBottom: 22 }}>Bugünün Teslimatları</h3>
+          {todayDeliveries.length === 0 ? (
+            <div style={{ fontSize: 14, color: 'var(--ink-60)' }}>Bugün için teslimat yok.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {todayDeliveries.map((d, i) => (
+                <div key={i} style={{ padding: 14, background: 'var(--paper-warm)', borderRadius: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 500 }}>{d.type}</div>
+                    <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-40)' }}>{d.kind}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 3 }}>{d.who}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </PortalCard>
       </div>
 
       <PortalCard padding={0}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line)' }}>
           <h3 className="serif" style={{ fontSize: 20, fontWeight: 500 }}>Üretim Listesi</h3>
-          <p style={{ fontSize: 13, color: 'var(--ink-60)', marginTop: 2 }}>Hazırlanmayı bekleyen aktif siparişler</p>
+          <p style={{ fontSize: 13, color: 'var(--ink-60)', marginTop: 2 }}>
+            Hazırlanmayı bekleyen siparişler — teslim tarihine göre sıralı
+          </p>
         </div>
-        <div style={{ padding: '12px 24px', display: 'grid', gridTemplateColumns: '120px 1fr 1fr 110px 100px', gap: 14, borderBottom: '1px solid var(--line)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-60)' }}>
-          <div>Sipariş</div>
-          <div>Tip</div>
-          <div>Alıcı</div>
-          <div>Sorumlu</div>
-          <div>Hazırla</div>
-        </div>
-        {orders.filter(o => o.status === 'production' || o.status === 'approved' || o.status === 'pending').slice(0, 6).map((o, i, arr) => (
-          <div key={o.id} style={{
-            padding: '14px 24px', display: 'grid', gridTemplateColumns: '120px 1fr 1fr 110px 100px', gap: 14, alignItems: 'center',
-            borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none',
-          }}>
-            <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--ink-60)' }}>{o.id}</div>
-            <div style={{ fontSize: 13.5 }}>{o.type}</div>
-            <div style={{ fontSize: 13, color: 'var(--ink-60)' }}>{o.recipient}</div>
-            <div style={{ fontSize: 13 }}>{o.assignee !== '—' ? o.assignee : <span style={{ color: 'var(--ink-40)' }}>Atanmadı</span>}</div>
-            <div>
-              <input type="checkbox" defaultChecked={o.status === 'production'} />
+        {production.length === 0 ? (
+          <div style={{ padding: 50, textAlign: 'center', color: 'var(--ink-60)', fontSize: 14 }}>Hazırlanacak sipariş yok.</div>
+        ) : (
+          <>
+            <div style={{ padding: '12px 24px', display: 'grid', gridTemplateColumns: '120px 1fr 1fr 120px 120px', gap: 14, borderBottom: '1px solid var(--line)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-60)' }}>
+              <div>Tarih</div>
+              <div>Tip</div>
+              <div>Alıcı</div>
+              <div>Kaynak</div>
+              <div>Durum</div>
             </div>
-          </div>
-        ))}
+            {production.map((o, i, arr) => {
+              const st = CAP_STATUS[o.status] || CAP_STATUS.pending;
+              return (
+                <div key={o.id} style={{
+                  padding: '14px 24px', display: 'grid', gridTemplateColumns: '120px 1fr 1fr 120px 120px', gap: 14, alignItems: 'center',
+                  borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none',
+                }}>
+                  <div style={{ fontSize: 13 }}>{fmtDay(o.date)}</div>
+                  <div style={{ fontSize: 13.5 }}>{o.type}</div>
+                  <div style={{ fontSize: 13, color: 'var(--ink-60)' }}>{o.who}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-60)' }}>{o.kind}</div>
+                  <div>
+                    <span style={{ padding: '3px 9px', fontSize: 10.5, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 500, borderRadius: 999, background: st.bg, color: st.fg }}>
+                      {st.label}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
       </PortalCard>
     </div>
   );
