@@ -1,31 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { Button, FloralImage, Reveal, SectionTitle } from '@/components/ui';
+import { SectionTitle } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
-import { IMAGES } from '@/components/site/images';
+import type { GalleryData } from '@/lib/gallery';
 
-export function Gallery({ preview = false }: { preview?: boolean }) {
-  const categories = ['Tümü', 'Düğün', 'Kurumsal', 'Tekne', 'Mekan', 'Doğum Günü', 'Kurutulmuş'];
-  const [cat, setCat] = useState('Tümü');
-
-  const items = [
-    { cat: 'Düğün',       img: 'wedding',   title: 'Villa Melisa', meta: 'Kır Düğünü · Antalya' },
-    { cat: 'Kurumsal',    img: 'corporate', title: 'Regnum Lobi',   meta: 'Karşılama Düzenlemesi' },
-    { cat: 'Tekne',       img: 'venue',     title: 'Boğaz Teknesi', meta: 'Düğün Organizasyonu' },
-    { cat: 'Kurutulmuş',  img: 'dried',     title: 'Akbank Set',    meta: 'Kurumsal Hediye' },
-    { cat: 'Düğün',       img: 'aisle',     title: 'Gelin Yolu',     meta: 'Tören Alanı' },
-    { cat: 'Doğum Günü',  img: 'birthday',  title: 'Pastel Gün',     meta: 'Doğum Günü' },
-    { cat: 'Kurumsal',    img: 'lobby',     title: 'Otel Lobisi',    meta: 'Haftalık Abonelik' },
-    { cat: 'Peyzaj',      img: 'landscape', title: 'Teras Bahçe',    meta: 'Dış Alan Tasarım' },
-    { cat: 'Düğün',       img: 'arch',      title: 'Nikah Arkı',     meta: 'Dini Nikâh' },
-    { cat: 'Kurumsal',    img: 'welcome',   title: 'Açılış Buketi',  meta: 'Kutlama' },
-    { cat: 'Kurutulmuş',  img: 'gift',      title: 'Butik Hediye',   meta: 'Promosyon' },
-    { cat: 'Düğün',       img: 'centerpc',  title: 'Sunum Masası',   meta: 'Düğün Detayı' },
-  ];
-  const filtered = cat === 'Tümü' ? items : items.filter(i => i.cat === cat);
-  const list = preview ? filtered.slice(0, 6) : filtered;
+export function Gallery({ data }: { data: GalleryData }) {
+  const [cat, setCat] = useState('all');
+  const tabs = [{ id: 'all', name: 'Tümü' }, ...data.categories];
+  const catName = (id: string) => data.categories.find(c => c.id === id)?.name || '';
+  const filtered = cat === 'all' ? data.images : data.images.filter(i => i.categoryId === cat);
 
   return (
     <section style={{ padding: '120px 0', background: 'var(--paper)' }}>
@@ -34,53 +18,49 @@ export function Gallery({ preview = false }: { preview?: boolean }) {
           <SectionTitle eyebrow="Galeri" title={<>Yapılan <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>işler.</em></>} />
         </div>
 
-        {!preview && (
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 40 }}>
-            {categories.map(c => (
-              <button key={c} onClick={() => setCat(c)} style={{
-                padding: '9px 18px', borderRadius: 999,
-                fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase',
-                background: cat === c ? 'var(--accent)' : 'transparent',
-                color: cat === c ? 'var(--paper)' : 'var(--ink)',
-                border: cat === c ? '1px solid var(--accent)' : '1px solid var(--line)',
-                cursor: 'pointer', transition: 'all 0.2s',
-              }}>{c}</button>
-            ))}
+        {data.images.length === 0 ? (
+          <div style={{ padding: '80px 0', textAlign: 'center', color: 'var(--ink-60)', fontSize: 16 }}>
+            Galeri yakında — çalışmalarımız yükleniyor.
           </div>
-        )}
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 40 }}>
+              {tabs.map(c => (
+                <button key={c.id} onClick={() => setCat(c.id)} style={{
+                  padding: '9px 18px', borderRadius: 999,
+                  fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase',
+                  background: cat === c.id ? 'var(--accent)' : 'transparent',
+                  color: cat === c.id ? 'var(--paper)' : 'var(--ink)',
+                  border: cat === c.id ? '1px solid var(--accent)' : '1px solid var(--line)',
+                  cursor: 'pointer', transition: 'all 0.2s',
+                }}>{c.name}</button>
+              ))}
+            </div>
 
-        <div style={{ columnCount: 3, columnGap: 16 }} className="masonry">
-          {list.map((it, i) => {
-            const im: any = (IMAGES as any)[it.img];
-            if (!im) return null;
-            return (
-              <div key={i} style={{ breakInside: 'avoid', marginBottom: 16, position: 'relative', cursor: 'pointer', overflow: 'hidden' }}
-                className="masonry-item">
-                <FloralImage palette={im.palette} seed={im.seed + i * 2} photo={im.photo} ratio={i % 3 === 0 ? '3/4' : i % 3 === 1 ? '1/1' : '4/5'} />
-                <div style={{
-                  position: 'absolute', inset: 0, padding: 18,
-                  display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-                  color: '#fff', background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7))',
-                  opacity: 0, transition: 'opacity 0.3s',
-                }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
-                  <div style={{ fontSize: 10, letterSpacing: '0.25em', opacity: 0.9 }}>{it.cat.toUpperCase()}</div>
-                  <div className="serif" style={{ fontSize: 22, marginTop: 4 }}>{it.title}</div>
-                  <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>{it.meta}</div>
+            <div style={{ columnCount: 3, columnGap: 16 }} className="masonry">
+              {filtered.map((it) => (
+                <div key={it.id} style={{ breakInside: 'avoid', marginBottom: 16, position: 'relative', overflow: 'hidden', borderRadius: 4 }}
+                  className="masonry-item">
+                  <img src={it.url} alt={it.title} style={{ width: '100%', display: 'block' }} />
+                  <div style={{
+                    position: 'absolute', inset: 0, padding: 18,
+                    display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+                    color: '#fff', background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7))',
+                    opacity: 0, transition: 'opacity 0.3s',
+                  }}
+                    onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                    onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
+                    <div style={{ fontSize: 10, letterSpacing: '0.25em', opacity: 0.9 }}>{catName(it.categoryId).toUpperCase()}</div>
+                    {it.title && <div className="serif" style={{ fontSize: 22, marginTop: 4 }}>{it.title}</div>}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-        <style>{`@media (max-width: 900px){ .masonry { column-count: 2 !important; } } @media (max-width: 520px){ .masonry { column-count: 1 !important; } }`}</style>
-
-        {preview && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
-            <Link href="/galeri" style={{ textDecoration: 'none' }}>
-              <Button variant="outlined" iconRight={<Icons.Arrow size={14} />}>Tüm Galeriyi Gör</Button>
-            </Link>
-          </div>
+              ))}
+            </div>
+            {filtered.length === 0 && (
+              <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--ink-60)' }}>Bu kategoride henüz görsel yok.</div>
+            )}
+            <style>{`@media (max-width: 900px){ .masonry { column-count: 2 !important; } } @media (max-width: 520px){ .masonry { column-count: 1 !important; } }`}</style>
+          </>
         )}
       </div>
     </section>

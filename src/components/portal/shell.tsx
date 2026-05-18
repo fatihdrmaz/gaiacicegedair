@@ -28,6 +28,7 @@ const adminNav: NavItem[] = [
   { id: 'admin-calendar', label: 'Takvim',       icon: 'Calendar', href: '/admin/takvim' },
   { id: 'admin-b2c',      label: 'Özel Günler',  icon: 'Gift',     href: '/admin/ozel-gunler' },
   { id: 'admin-capacity', label: 'Atölye',       icon: 'Hall',     href: '/admin/atolye' },
+  { id: 'admin-gallery',  label: 'Galeri',       icon: 'Sparkle',  href: '/admin/galeri' },
   { id: 'admin-blog',     label: 'Blog',         icon: 'Star',     href: '/admin/blog' },
 ]
 
@@ -46,6 +47,7 @@ const titleMap: Record<string, string> = {
   '/admin/takvim':          'Takvim — Tüm Talepler',
   '/admin/ozel-gunler':     'B2C Özel Gün Siparişleri',
   '/admin/atolye':          'Atölye Kapasite',
+  '/admin/galeri':          'Galeri Yönetimi',
   '/admin/blog':            'Blog Yönetimi',
 };
 

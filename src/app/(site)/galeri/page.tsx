@@ -1,6 +1,10 @@
 import { Gallery } from '@/components/site/gallery';
+import { getGalleryData } from '@/lib/gallery';
 
-export default function GaleriPage() {
+export const revalidate = 300;
+
+export default async function GaleriPage() {
+  const data = await getGalleryData();
   return (
     <>
       <section style={{ paddingTop: 180, paddingBottom: 60, textAlign: 'center' }}>
@@ -10,7 +14,7 @@ export default function GaleriPage() {
           <p style={{ marginTop: 22, fontSize: 18, color: 'var(--ink-60)', maxWidth: 640, margin: '22px auto 0' }}>Gerçek etkinlikler, gerçek mekânlar — atölyeden kareler.</p>
         </div>
       </section>
-      <Gallery />
+      <Gallery data={data} />
     </>
   );
 }
