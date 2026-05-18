@@ -1,15 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SectionTitle } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
 import type { GalleryData } from '@/lib/gallery';
 
 export function Gallery({ data }: { data: GalleryData }) {
   const [cat, setCat] = useState('all');
+  const [lb, setLb] = useState<number | null>(null);
   const tabs = [{ id: 'all', name: 'Tümü' }, ...data.categories];
   const catName = (id: string) => data.categories.find(c => c.id === id)?.name || '';
   const filtered = cat === 'all' ? data.images : data.images.filter(i => i.categoryId === cat);
+
+  // Lightbox açıkken arka plan kaymasını kilitle + klavye desteği
+  useEffect(() => {
+    if (lb === null) return;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLb(null);
+      else if (e.key === 'ArrowRight') setLb(i => (i === null ? i : (i + 1) % filtered.length));
+      else if (e.key === 'ArrowLeft') setLb(i => (i === null ? i : (i - 1 + filtered.length) % filtered.length));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [lb, filtered.length]);
+
+  const current = lb !== null ? filtered[lb] : null;
 
   return (
     <section style={{ padding: '120px 0', background: 'var(--paper)' }}>
@@ -37,13 +56,13 @@ export function Gallery({ data }: { data: GalleryData }) {
               ))}
             </div>
 
-            <div style={{ columnCount: 3, columnGap: 16 }} className="masonry">
-              {filtered.map((it) => (
-                <div key={it.id} style={{ breakInside: 'avoid', marginBottom: 16, position: 'relative', overflow: 'hidden', borderRadius: 4 }}
+            <div style={{ columnCount: 4, columnGap: 14 }} className="masonry">
+              {filtered.map((it, idx) => (
+                <div key={it.id} onClick={() => setLb(idx)} style={{ breakInside: 'avoid', marginBottom: 14, position: 'relative', overflow: 'hidden', borderRadius: 4, cursor: 'pointer' }}
                   className="masonry-item">
                   <img src={it.url} alt={it.title} style={{ width: '100%', display: 'block' }} />
                   <div style={{
-                    position: 'absolute', inset: 0, padding: 18,
+                    position: 'absolute', inset: 0, padding: 16,
                     display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
                     color: '#fff', background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7))',
                     opacity: 0, transition: 'opacity 0.3s',
@@ -51,7 +70,7 @@ export function Gallery({ data }: { data: GalleryData }) {
                     onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
                     onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
                     <div style={{ fontSize: 10, letterSpacing: '0.25em', opacity: 0.9 }}>{catName(it.categoryId).toUpperCase()}</div>
-                    {it.title && <div className="serif" style={{ fontSize: 22, marginTop: 4 }}>{it.title}</div>}
+                    {it.title && <div className="serif" style={{ fontSize: 19, marginTop: 4 }}>{it.title}</div>}
                   </div>
                 </div>
               ))}
@@ -59,10 +78,60 @@ export function Gallery({ data }: { data: GalleryData }) {
             {filtered.length === 0 && (
               <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--ink-60)' }}>Bu kategoride henüz görsel yok.</div>
             )}
-            <style>{`@media (max-width: 900px){ .masonry { column-count: 2 !important; } } @media (max-width: 520px){ .masonry { column-count: 1 !important; } }`}</style>
+            <style>{`
+              @media (min-width: 1500px){ .masonry { column-count: 5 !important; } }
+              @media (max-width: 1024px){ .masonry { column-count: 3 !important; } }
+              @media (max-width: 720px){ .masonry { column-count: 2 !important; } }
+              @media (max-width: 460px){ .masonry { column-count: 1 !important; } }
+            `}</style>
           </>
         )}
       </div>
+
+      {current && (
+        <div
+          onClick={() => setLb(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(15,17,15,0.92)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+          }}
+        >
+          <button onClick={() => setLb(null)} aria-label="Kapat" style={{
+            position: 'absolute', top: 20, right: 24, width: 44, height: 44, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Icons.Close size={22} />
+          </button>
+
+          {filtered.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLb((lb! - 1 + filtered.length) % filtered.length); }}
+                aria-label="Önceki"
+                style={{ position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)', width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Icons.ChevronLeft size={22} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLb((lb! + 1) % filtered.length); }}
+                aria-label="Sonraki"
+                style={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Icons.Chevron size={22} />
+              </button>
+            </>
+          )}
+
+          <div onClick={(e) => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '88vh', textAlign: 'center' }}>
+            <img src={current.url} alt={current.title} style={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 4 }} />
+            <div style={{ marginTop: 14, color: '#fff' }}>
+              <div style={{ fontSize: 11, letterSpacing: '0.22em', opacity: 0.7 }}>{catName(current.categoryId).toUpperCase()}</div>
+              {current.title && <div className="serif" style={{ fontSize: 20, marginTop: 4 }}>{current.title}</div>}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
