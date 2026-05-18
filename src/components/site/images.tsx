@@ -33,17 +33,17 @@ export const PHOTOS: Record<string, string> = {
   sEvent: 'https://images.unsplash.com/photo-1761110787206-2cc164e4913c?w=1200&q=80',
   sLandscape: 'https://images.unsplash.com/photo-1636489571981-e46df15657ce?w=1200&q=80',
 
-  // Gallery
-  gLobby: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200&q=80',
-  gTable: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=1200&q=80',
-  gDried: 'https://images.unsplash.com/photo-1604323990536-6e49834c6885?w=1200&q=80',
-  gGift: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?w=1200&q=80',
-  gWelcome: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=1200&q=80',
-  gAisle: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=1200&q=80',
-  gArch: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=1200&q=80',
-  gCenter: 'https://images.unsplash.com/photo-1530023367847-a683933f4172?w=1200&q=80',
-  gBouquet: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=1200&q=80',
-  gPeyzaj: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=1200&q=80',
+  // Gallery — konuya uygun gerçek görseller
+  gLobby: 'https://images.unsplash.com/photo-1778049047837-3e64b7d56c68?w=1200&q=80',
+  gTable: 'https://images.unsplash.com/photo-1763553113332-800519753e40?w=1200&q=80',
+  gDried: 'https://images.unsplash.com/photo-1533801956226-12d07083ca61?w=1200&q=80',
+  gGift: 'https://images.unsplash.com/photo-1668621101712-49cf6254d70d?w=1200&q=80',
+  gWelcome: 'https://images.unsplash.com/photo-1660728581287-832765e6e5e7?w=1200&q=80',
+  gAisle: 'https://images.unsplash.com/photo-1774625068234-7b81185b5eea?w=1200&q=80',
+  gArch: 'https://images.unsplash.com/photo-1677677402907-05f2883e3f66?w=1200&q=80',
+  gCenter: 'https://images.unsplash.com/photo-1751891076185-cced7f1cc007?w=1200&q=80',
+  gBouquet: 'https://images.unsplash.com/photo-1617630970477-535b975bec53?w=1200&q=80',
+  gPeyzaj: 'https://images.unsplash.com/photo-1695616827909-6f147f22d40f?w=1200&q=80',
 
   // About/team/values
   atelier: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1200&q=80',
@@ -60,25 +60,25 @@ export const PHOTOS: Record<string, string> = {
   blog5: 'https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?w=1200&q=80',
   blog6: 'https://images.unsplash.com/photo-1595207759571-3a4df3c49230?w=1200&q=80',
 
-  // Kurumsal services
-  cWelcome: 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=1200&q=80',
-  cLobby: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80',
-  cMeeting: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=1200&q=80',
-  cGift: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=1200&q=80',
-  cDriedGift: 'https://images.unsplash.com/photo-1602080858428-57174f9431cf?w=1200&q=80',
+  // Kurumsal services — konuya uygun gerçek görseller
+  cWelcome: 'https://images.unsplash.com/photo-1660549071381-d1e8e9b5cc42?w=1200&q=80',
+  cLobby: 'https://images.unsplash.com/photo-1742846546609-f26d18d1bce2?w=1200&q=80',
+  cMeeting: 'https://images.unsplash.com/photo-1745970649957-b4b1f7fde4ea?w=1200&q=80',
+  cGift: 'https://images.unsplash.com/photo-1678488914338-4e53078abe80?w=1200&q=80',
+  cDriedGift: 'https://images.unsplash.com/photo-1533801587742-c5832d4efa3e?w=1200&q=80',
 
   // Organizasyon
-  oBoat: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=1200&q=80',
-  oBrideCar: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200&q=80',
+  oBoat: 'https://images.unsplash.com/photo-1696792681028-3f59790542df?w=1200&q=80',
+  oBrideCar: 'https://images.unsplash.com/photo-1773551023336-66bb6bacd8b7?w=1200&q=80',
 
-  // B2C ürünleri
-  pBouquet: 'https://images.unsplash.com/photo-1530092285049-1c42085fd395?w=1200&q=80',
-  pArrangement: 'https://images.unsplash.com/photo-1502780402662-acc01917a35f?w=1200&q=80',
-  pPot: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=1200&q=80',
-  pOrchid: 'https://images.unsplash.com/photo-1567748157439-651aca2ff064?w=1200&q=80',
-  pTebrik: 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=1200&q=80',
-  pWreath: 'https://images.unsplash.com/photo-1606041008023-472dfb5e530f?w=1200&q=80',
-  pDried: 'https://images.unsplash.com/photo-1604323990536-6e49834c6885?w=1200&q=80',
+  // B2C ürünleri — konuya uygun gerçek görseller
+  pBouquet: 'https://images.unsplash.com/photo-1599791095997-5cf38bb5ff69?w=1200&q=80',
+  pArrangement: 'https://images.unsplash.com/photo-1749491105960-7039dcf43451?w=1200&q=80',
+  pPot: 'https://images.unsplash.com/photo-1687269111857-3b398711c2f4?w=1200&q=80',
+  pOrchid: 'https://images.unsplash.com/photo-1618080578815-335456280012?w=1200&q=80',
+  pTebrik: 'https://images.unsplash.com/photo-1610507121140-78606d4e5220?w=1200&q=80',
+  pWreath: 'https://images.unsplash.com/photo-1758334587549-0c80dbf4dd3e?w=1200&q=80',
+  pDried: 'https://images.unsplash.com/photo-1607087007621-ef43a693ed80?w=1200&q=80',
 };
 
 // Real-photo image component
