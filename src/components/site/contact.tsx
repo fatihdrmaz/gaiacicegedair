@@ -1,11 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Button, Field, Input, TextArea } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
 
 export function Contact({ full = false }: { full?: boolean }) {
   const [sent, setSent] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const upd = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/iletisim', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || 'Mesaj gönderilemedi.');
+        return;
+      }
+      setSent(true);
+    } catch {
+      setError('Bağlantı hatası. Lütfen tekrar deneyin.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <section style={{ padding: full ? '160px 0 100px' : '120px 0', background: 'var(--paper)' }}>
       <div className="container">
@@ -40,12 +68,13 @@ export function Contact({ full = false }: { full?: boolean }) {
                 <p style={{ color: 'var(--ink-60)', marginTop: 8 }}>24 saat içinde size döneceğiz.</p>
               </div>
             ) : (
-              <form onSubmit={(e) => { e.preventDefault(); setSent(true); }} style={{ display: 'grid', gap: 24 }}>
-                <Field label="Ad Soyad"><Input placeholder="Adınız" required /></Field>
-                <Field label="E-posta"><Input type="email" placeholder="ornek@email.com" required /></Field>
-                <Field label="Telefon"><Input placeholder="+90" /></Field>
-                <Field label="Mesaj"><TextArea placeholder="Nasıl yardımcı olabiliriz?" rows={4} /></Field>
-                <Button variant="primary" type="submit" size="lg" iconRight={<Icons.Arrow size={14} />}>Gönder</Button>
+              <form onSubmit={submit} style={{ display: 'grid', gap: 24 }}>
+                <Field label="Ad Soyad"><Input placeholder="Adınız" required value={form.name} onChange={(e: any) => upd('name', e.target.value)} /></Field>
+                <Field label="E-posta"><Input type="email" placeholder="ornek@email.com" required value={form.email} onChange={(e: any) => upd('email', e.target.value)} /></Field>
+                <Field label="Telefon"><Input placeholder="+90" value={form.phone} onChange={(e: any) => upd('phone', e.target.value)} /></Field>
+                <Field label="Mesaj"><TextArea placeholder="Nasıl yardımcı olabiliriz?" rows={4} required value={form.message} onChange={(e: any) => upd('message', e.target.value)} /></Field>
+                {error && <div style={{ padding: '10px 14px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 13 }}>{error}</div>}
+                <Button variant="primary" type="submit" size="lg" disabled={submitting} iconRight={<Icons.Arrow size={14} />}>{submitting ? 'Gönderiliyor…' : 'Gönder'}</Button>
               </form>
             )}
           </div>

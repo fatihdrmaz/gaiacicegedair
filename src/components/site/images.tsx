@@ -52,13 +52,13 @@ export const PHOTOS: Record<string, string> = {
   team3: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
   team4: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&q=80',
 
-  // Blog
-  blog1: 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=1200&q=80',
-  blog2: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=1200&q=80',
-  blog3: 'https://images.unsplash.com/photo-1558051815-0f18e64e6280?w=1200&q=80',
-  blog4: 'https://images.unsplash.com/photo-1536819114556-1e10f967fb61?w=1200&q=80',
-  blog5: 'https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?w=1200&q=80',
-  blog6: 'https://images.unsplash.com/photo-1595207759571-3a4df3c49230?w=1200&q=80',
+  // Blog — konuya uygun gerçek görseller
+  blog1: 'https://images.unsplash.com/photo-1593470309378-bf460a1c7f10?w=1200&q=80',
+  blog2: 'https://images.unsplash.com/photo-1706741921974-967b3590743c?w=1200&q=80',
+  blog3: 'https://images.unsplash.com/photo-1559548038-24cb73ce4408?w=1200&q=80',
+  blog4: 'https://images.unsplash.com/photo-1610790953079-aca4bf5a04b0?w=1200&q=80',
+  blog5: 'https://images.unsplash.com/photo-1594149596808-e3b6174968b3?w=1200&q=80',
+  blog6: 'https://images.unsplash.com/photo-1680563899402-26c3a712831f?w=1200&q=80',
 
   // Kurumsal services — konuya uygun gerçek görseller
   cWelcome: 'https://images.unsplash.com/photo-1660549071381-d1e8e9b5cc42?w=1200&q=80',

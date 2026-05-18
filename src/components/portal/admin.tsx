@@ -362,14 +362,20 @@ export function PortalAdminKanban({ state }: { state: PortalState }) {
 // ============ Atölye Kapasite ============
 export function PortalAdminCapacity({ state }: { state: PortalState }) {
   const orders = state.orders || [];
+  const b2cItems = (state.b2cOrders || []).flatMap(o => o.items);
+
+  // Bugünden başlayan 14 günlük pencere — yerel tarih (UTC kayması olmadan)
+  const toIso = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
   const days = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(2026, 4, 16 + i);
-    const iso = d.toISOString().slice(0, 10);
-    return {
-      iso, d,
-      orders: orders.filter(o => o.date === iso),
-    };
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + i);
+    const iso = toIso(d);
+    const corporate = orders.filter(o => o.date === iso);
+    const b2c = b2cItems.filter(it => it.eventDate === iso);
+    return { iso, d, count: corporate.length + b2c.length };
   });
 
   const team = [
@@ -402,7 +408,7 @@ export function PortalAdminCapacity({ state }: { state: PortalState }) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(14, 1fr)', gap: 4 }}>
           {days.map((day, i) => {
-            const load = day.orders.length;
+            const load = day.count;
             const color = load === 0 ? 'var(--paper-warm)' : load <= 2 ? 'var(--accent-soft)' : load <= 4 ? 'var(--accent)' : '#a85050';
             const txt = load === 0 ? 'var(--ink-40)' : load <= 2 ? 'var(--accent-deep)' : '#fff';
             return (
@@ -476,8 +482,8 @@ export function PortalAdminCapacity({ state }: { state: PortalState }) {
 
       <PortalCard padding={0}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line)' }}>
-          <h3 className="serif" style={{ fontSize: 20, fontWeight: 500 }}>Yarın Üretim Listesi</h3>
-          <p style={{ fontSize: 13, color: 'var(--ink-60)', marginTop: 2 }}>19 Mayıs · 6 sipariş hazırlanacak</p>
+          <h3 className="serif" style={{ fontSize: 20, fontWeight: 500 }}>Üretim Listesi</h3>
+          <p style={{ fontSize: 13, color: 'var(--ink-60)', marginTop: 2 }}>Hazırlanmayı bekleyen aktif siparişler</p>
         </div>
         <div style={{ padding: '12px 24px', display: 'grid', gridTemplateColumns: '120px 1fr 1fr 110px 100px', gap: 14, borderBottom: '1px solid var(--line)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-60)' }}>
           <div>Sipariş</div>

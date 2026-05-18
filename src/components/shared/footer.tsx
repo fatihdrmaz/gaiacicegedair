@@ -26,7 +26,7 @@ export function Footer({ onQuote }: { onQuote?: () => void }) {
   return (
     <footer style={{ background: 'var(--accent-deep)', color: 'var(--paper)', paddingTop: 90, paddingBottom: 30 }}>
       <div className="container">
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.2fr', gap: 50 }} className="footer-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 50 }} className="footer-grid">
           <div>
             <div style={{ color: '#fff' }}>
               <GaiaLogo size={42} color="#fff" stacked={false} tagline />
@@ -65,18 +65,6 @@ export function Footer({ onQuote }: { onQuote?: () => void }) {
               </ul>
             </div>
           ))}
-          <div>
-            <div className="overline" style={{ marginBottom: 18, opacity: 0.7 }}>Bülten</div>
-            <p style={{ fontSize: 14, opacity: 0.8, lineHeight: 1.55, marginBottom: 16 }}>
-              Mevsim çiçekleri ve ilhamlar için.
-            </p>
-            <form onSubmit={e => e.preventDefault()} style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
-              <input type="email" placeholder="E-posta adresiniz" style={{ flex: 1, background: 'transparent', border: 'none', padding: '10px 0', color: '#fff', outline: 'none', fontSize: 14 }} />
-              <button type="submit" style={{ color: '#fff', padding: '10px 0 10px 10px' }}>
-                <Icons.Arrow size={16} />
-              </button>
-            </form>
-          </div>
         </div>
         <div style={{ marginTop: 70, paddingTop: 30, borderTop: '1px solid rgba(255,255,255,0.15)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20, fontSize: 12, opacity: 0.7, letterSpacing: '0.1em' }}>
           <div>© 2026 GAIA Çiçeğe Dair · Tüm Hakları Saklıdır</div>
