@@ -1,16 +1,49 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SectionTitle } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
 import type { GalleryData } from '@/lib/gallery';
 
+const BATCH = 12;
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export function Gallery({ data }: { data: GalleryData }) {
   const [cat, setCat] = useState('all');
   const [lb, setLb] = useState<number | null>(null);
+  const [imgs, setImgs] = useState(data.images);
+  const [visible, setVisible] = useState(BATCH);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
   const tabs = [{ id: 'all', name: 'Tümü' }, ...data.categories];
   const catName = (id: string) => data.categories.find(c => c.id === id)?.name || '';
-  const filtered = cat === 'all' ? data.images : data.images.filter(i => i.categoryId === cat);
+  const filtered = cat === 'all' ? imgs : imgs.filter(i => i.categoryId === cat);
+  const shown = filtered.slice(0, visible);
+
+  // Görselleri istemcide bir kez karıştır
+  useEffect(() => { setImgs(shuffle(data.images)); }, [data.images]);
+
+  // Kategori değişince listeyi başa al
+  useEffect(() => { setVisible(BATCH); }, [cat]);
+
+  // Sayfa sonuna yaklaşınca daha fazla görsel yükle
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) setVisible(v => Math.min(v + BATCH, filtered.length));
+    }, { rootMargin: '500px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [filtered.length]);
 
   // Lightbox açıkken arka plan kaymasını kilitle + klavye desteği
   useEffect(() => {
@@ -57,10 +90,10 @@ export function Gallery({ data }: { data: GalleryData }) {
             </div>
 
             <div style={{ columnCount: 4, columnGap: 14 }} className="masonry">
-              {filtered.map((it, idx) => (
+              {shown.map((it, idx) => (
                 <div key={it.id} onClick={() => setLb(idx)} style={{ breakInside: 'avoid', marginBottom: 14, position: 'relative', overflow: 'hidden', borderRadius: 4, cursor: 'pointer' }}
                   className="masonry-item">
-                  <img src={it.url} alt={it.title} style={{ width: '100%', display: 'block' }} />
+                  <img src={it.url} alt={it.title} loading="lazy" style={{ width: '100%', display: 'block' }} />
                   <div style={{
                     position: 'absolute', inset: 0, padding: 16,
                     display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
@@ -77,6 +110,13 @@ export function Gallery({ data }: { data: GalleryData }) {
             </div>
             {filtered.length === 0 && (
               <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--ink-60)' }}>Bu kategoride henüz görsel yok.</div>
+            )}
+            {/* Sona yaklaşınca yeni görseller yüklenir */}
+            <div ref={sentinelRef} style={{ height: 1 }} />
+            {visible < filtered.length && (
+              <div style={{ padding: '30px 0', textAlign: 'center', color: 'var(--ink-60)', fontSize: 13, letterSpacing: '0.1em' }}>
+                Daha fazla yükleniyor…
+              </div>
             )}
             <style>{`
               @media (min-width: 1500px){ .masonry { column-count: 5 !important; } }
