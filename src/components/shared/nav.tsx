@@ -17,7 +17,7 @@ const items = [
   { href: '/iletisim', label: 'İletişim', match: (p: string) => p.startsWith('/iletisim') },
 ];
 
-export function Nav({ darkHero }: { darkHero?: boolean; onOpenQuote?: () => void }) {
+export function Nav(_props: { darkHero?: boolean; onOpenQuote?: () => void }) {
   const pathname = usePathname() || '/';
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -36,22 +36,18 @@ export function Nav({ darkHero }: { darkHero?: boolean; onOpenQuote?: () => void
     } catch { setPortalAuthed(false); }
   }, []);
 
-  const isDark = !!darkHero;
-  const inverted = isDark && !scrolled;
-  const navColor = inverted ? '#fff' : 'var(--ink)';
-  const logoColor = inverted ? '#fff' : undefined;
+  // Header her sayfada katı arka plana sahip — hero görselleri üzerinde de okunur
+  const inverted = false;
+  const navColor = 'var(--ink)';
+  const logoColor = undefined;
 
   return (
     <>
     <header style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-      background: scrolled
-        ? 'rgba(250, 249, 246, 0.92)'
-        : inverted
-          ? 'linear-gradient(180deg, rgba(20,24,21,0.62) 0%, rgba(20,24,21,0.28) 55%, rgba(20,24,21,0) 100%)'
-          : 'transparent',
-      backdropFilter: scrolled ? 'saturate(140%) blur(14px)' : 'none',
-      borderBottom: scrolled ? '1px solid var(--line)' : '1px solid transparent',
+      background: 'rgba(250, 249, 246, 0.94)',
+      backdropFilter: 'saturate(140%) blur(14px)',
+      borderBottom: '1px solid var(--line)',
       transition: 'all 0.35s ease',
     }}>
       <div className="container" style={{
