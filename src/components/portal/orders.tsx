@@ -255,7 +255,7 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
                 options={[{ value: '', label: 'Yeni adres gir...' }, ...state.addresses.map(a => ({ value: a.id, label: `${a.label} — ${a.city}` }))]} />
               <div style={{ gridColumn: 'span 2' }}><PortalInput label="Adres" required placeholder="Mahalle, sokak, no" value={data.addr} onChange={e => update('addr', e.target.value)} /></div>
               <PortalSelect label="Şehir" value={data.city} onChange={e => update('city', e.target.value)} options={['İstanbul', 'Ankara', 'İzmir', 'Antalya', 'Bursa']} />
-              <PortalInput label="Teslim Tarihi" type="date" required value={data.date} onChange={e => update('date', e.target.value)} />
+              <PortalInput label="Teslim Tarihi" type="date" required min={new Date().toISOString().slice(0, 10)} value={data.date} onChange={e => update('date', e.target.value)} />
               <PortalInput label="Teslim Saati" type="time" value={data.time} onChange={e => update('time', e.target.value)} />
               <PortalInput label="İletişim Telefonu" placeholder="+90 5xx xxx xx xx" />
             </div>

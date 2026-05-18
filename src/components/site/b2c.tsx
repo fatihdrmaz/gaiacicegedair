@@ -114,7 +114,7 @@ export function B2CStep1({ days, addDay, removeDay, updateDay, onNext }: { days:
               <Icons.Calendar size={20} />
             </div>
             <Field label="Günün Adı"><Input value={d.name} onChange={(e: any) => updateDay(d.id, { name: e.target.value })} placeholder="Örn: Annemin Doğum Günü" /></Field>
-            <Field label="Tarih"><Input type="date" value={d.date} onChange={(e: any) => updateDay(d.id, { date: e.target.value })} /></Field>
+            <Field label="Tarih"><Input type="date" min={new Date().toISOString().slice(0, 10)} value={d.date} onChange={(e: any) => updateDay(d.id, { date: e.target.value })} /></Field>
             <Field label="Vesile"><Select value={d.occasion} onChange={(e: any) => updateDay(d.id, { occasion: e.target.value })} options={['Doğum Günü','Yıl Dönümü','Anneler Günü','Babalar Günü','Sevgililer Günü','Teşekkür','Diğer']} /></Field>
             {days.length > 1 && (
               <button onClick={() => removeDay(d.id)} style={{ color: 'var(--ink-40)', padding: 8 }}>

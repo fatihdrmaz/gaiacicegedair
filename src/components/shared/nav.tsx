@@ -17,7 +17,7 @@ const items = [
   { href: '/iletisim', label: 'İletişim', match: (p: string) => p.startsWith('/iletisim') },
 ];
 
-export function Nav({ darkHero, onOpenQuote }: { darkHero?: boolean; onOpenQuote?: () => void }) {
+export function Nav({ darkHero }: { darkHero?: boolean; onOpenQuote?: () => void }) {
   const pathname = usePathname() || '/';
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -45,7 +45,11 @@ export function Nav({ darkHero, onOpenQuote }: { darkHero?: boolean; onOpenQuote
     <>
     <header style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-      background: scrolled ? 'rgba(250, 249, 246, 0.92)' : 'transparent',
+      background: scrolled
+        ? 'rgba(250, 249, 246, 0.92)'
+        : inverted
+          ? 'linear-gradient(180deg, rgba(20,24,21,0.62) 0%, rgba(20,24,21,0.28) 55%, rgba(20,24,21,0) 100%)'
+          : 'transparent',
       backdropFilter: scrolled ? 'saturate(140%) blur(14px)' : 'none',
       borderBottom: scrolled ? '1px solid var(--line)' : '1px solid transparent',
       transition: 'all 0.35s ease',
@@ -73,7 +77,7 @@ export function Nav({ darkHero, onOpenQuote }: { darkHero?: boolean; onOpenQuote
                   paddingBottom: 4,
                   borderBottom: isActive ? `1px solid ${activeColor}` : '1px solid transparent',
                   transition: 'all 0.2s',
-                  textShadow: inverted ? '0 1px 6px rgba(0,0,0,0.35)' : 'none',
+                  textShadow: inverted ? '0 1px 10px rgba(0,0,0,0.6)' : 'none',
                   textDecoration: 'none',
                 }}
               >
@@ -84,18 +88,11 @@ export function Nav({ darkHero, onOpenQuote }: { darkHero?: boolean; onOpenQuote
         </nav>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <Link href="/portal/giris" style={{
-            fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase',
-            color: navColor, cursor: 'pointer', padding: '8px 0',
-            borderBottom: '1px solid ' + (inverted ? 'rgba(255,255,255,0.3)' : 'var(--line)'),
-            textShadow: inverted ? '0 1px 6px rgba(0,0,0,0.35)' : 'none',
-            textDecoration: 'none',
-          }} className="portal-link">
-            {portalAuthed ? 'Kurumsal Panel' : 'Kurumsal Giriş'}
+          <Link href="/portal/giris" style={{ textDecoration: 'none' }}>
+            <Button size="sm" variant={inverted ? 'white' : 'primary'}>
+              {portalAuthed ? 'Kurumsal Panel' : 'Kurumsal'}
+            </Button>
           </Link>
-          <Button size="sm" variant={inverted ? 'white' : 'primary'} onClick={onOpenQuote}>
-            Teklif Al
-          </Button>
           <button onClick={() => setMenuOpen(true)} className="mobile-only" style={{ display: 'none', padding: 8, color: navColor }}>
             <Icons.Menu size={22} />
           </button>
@@ -119,6 +116,10 @@ export function Nav({ darkHero, onOpenQuote }: { darkHero?: boolean; onOpenQuote
               {it.label}
             </Link>
           ))}
+          <Link href="/portal/giris" onClick={() => setMenuOpen(false)}
+            className="serif" style={{ fontSize: 32, color: 'var(--accent)', cursor: 'pointer', textDecoration: 'none' }}>
+            {portalAuthed ? 'Kurumsal Panel' : 'Kurumsal'}
+          </Link>
         </nav>
       </div>
     )}
