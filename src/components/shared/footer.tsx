@@ -69,7 +69,9 @@ export function Footer({ onQuote }: { onQuote?: () => void }) {
         <div style={{ marginTop: 70, paddingTop: 30, borderTop: '1px solid rgba(255,255,255,0.15)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20, fontSize: 12, opacity: 0.7, letterSpacing: '0.1em' }}>
           <div>© 2026 GAIA Çiçeğe Dair · Tüm Hakları Saklıdır</div>
           <div style={{ display: 'flex', gap: 24 }}>
-            <a>Gizlilik</a><a>KVKK</a><a>Çerezler</a>
+            <Link href="/gizlilik" style={{ color: 'inherit', textDecoration: 'none' }}>Gizlilik</Link>
+            <Link href="/kvkk" style={{ color: 'inherit', textDecoration: 'none' }}>KVKK</Link>
+            <Link href="/cerez-politikasi" style={{ color: 'inherit', textDecoration: 'none' }}>Çerezler</Link>
           </div>
         </div>
       </div>

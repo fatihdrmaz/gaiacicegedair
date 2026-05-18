@@ -16,6 +16,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/iletisim',
     '/blog',
     '/ozel-gunlerim',
+    '/gizlilik',
+    '/kvkk',
+    '/cerez-politikasi',
   ];
 
   const staticEntries: MetadataRoute.Sitemap = staticPaths.map((path) => ({
