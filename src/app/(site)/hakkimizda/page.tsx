@@ -1,4 +1,4 @@
-import { About, WhoWeAre, Values, Team } from '@/components/site/about';
+import { About, WhoWeAre, Values } from '@/components/site/about';
 import { Testimonials } from '@/components/site/showcase';
 
 export default function HakkimizdaPage() {
@@ -14,7 +14,6 @@ export default function HakkimizdaPage() {
       <About full />
       <WhoWeAre />
       <Values />
-      <Team />
       <Testimonials />
     </>
   );
