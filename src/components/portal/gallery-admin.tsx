@@ -6,7 +6,7 @@ import { PortalCard, PortalButton, PortalInput } from '@/components/portal/ui';
 import { Icons } from '@/components/shared/icons';
 
 type Cat = { id: string; name: string };
-type Img = { id: string; category_id: string; image_url: string; title: string | null };
+type Img = { id: string; category_id: string; image_url: string; title: string | null; featured: boolean };
 
 export function PortalAdminGallery() {
   const [cats, setCats] = useState<Cat[]>([]);
@@ -53,6 +53,17 @@ export function PortalAdminGallery() {
     setBusy(id);
     try {
       const res = await fetch('/api/admin/galeri?type=image&id=' + encodeURIComponent(id), { method: 'DELETE' });
+      if (res.ok) load();
+    } catch { /* yoksay */ } finally { setBusy(''); }
+  };
+
+  const toggleFeatured = async (id: string, featured: boolean) => {
+    setBusy(id);
+    try {
+      const res = await fetch('/api/admin/galeri', {
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id, featured: !featured }),
+      });
       if (res.ok) load();
     } catch { /* yoksay */ } finally { setBusy(''); }
   };
@@ -126,8 +137,13 @@ export function PortalAdminGallery() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
               {catImgs.map(img => (
-                <div key={img.id} style={{ position: 'relative', aspectRatio: '1/1', borderRadius: 6, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                <div key={img.id} style={{ position: 'relative', aspectRatio: '1/1', borderRadius: 6, overflow: 'hidden', border: img.featured ? '2px solid var(--accent)' : '1px solid var(--line)' }}>
                   <img src={img.image_url} alt={img.title || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button onClick={() => toggleFeatured(img.id, img.featured)} disabled={busy === img.id}
+                    title={img.featured ? 'Öne çıkarmayı kaldır' : 'Ana sayfada öne çıkar'}
+                    style={{ position: 'absolute', top: 6, left: 6, height: 26, padding: '0 8px', borderRadius: 999, background: img.featured ? 'var(--accent)' : 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}>
+                    <Icons.Star size={12} /> {img.featured ? 'Öne çıkan' : 'Öne çıkar'}
+                  </button>
                   <button onClick={() => removeImage(img.id)} disabled={busy === img.id} title="Görseli sil"
                     style={{ position: 'absolute', top: 6, right: 6, width: 26, height: 26, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Icons.Trash size={13} />

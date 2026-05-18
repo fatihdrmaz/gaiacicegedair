@@ -3,9 +3,38 @@
 import { useEffect, useState } from 'react';
 import { Button, FloralImage, Reveal, SectionTitle } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
-import { IMAGES } from '@/components/site/images';
+import { createClient } from '@/lib/supabase/client';
+
+type ShowcaseItem = { id: string; url: string; title: string; category: string };
 
 export function Showcase() {
+  const [items, setItems] = useState<ShowcaseItem[] | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createClient();
+    supabase
+      .from('gallery_images')
+      .select('id, image_url, title, gallery_categories(name)')
+      .eq('featured', true)
+      .order('created_at', { ascending: false })
+      .limit(6)
+      .then(({ data }) => {
+        if (!active) return;
+        const mapped: ShowcaseItem[] = (data || []).map((r: any) => ({
+          id: r.id,
+          url: r.image_url,
+          title: r.title || '',
+          category: r.gallery_categories?.name || '',
+        }));
+        setItems(mapped);
+      });
+    return () => { active = false; };
+  }, []);
+
+  // Öne çıkan görsel yoksa bölümü gösterme
+  if (!items || items.length === 0) return null;
+
   return (
     <section style={{ padding: '120px 0', background: 'var(--paper-warm)' }}>
       <div className="container">
@@ -14,36 +43,25 @@ export function Showcase() {
           title={<>Atölyeden <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>kareler.</em></>}
           subtitle="Gerçek etkinlikler, gerçek mekânlar — her projede tek tek tasarlanan konseptler."
         />
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gridTemplateRows: '280px 280px', gap: 16, marginTop: 60 }}>
-          {[
-            { img: 'wedding', row: '1 / span 2', col: '1 / span 1', caption: 'Villa Melisa · Kır Düğünü', meta: 'Mayıs 2024' },
-            { img: 'corporate', row: '1', col: '2', caption: 'Regnum Lobi', meta: 'Karşılama' },
-            { img: 'dried', row: '1', col: '3', caption: 'Akbank Hediye Seti', meta: 'Kurumsal' },
-            { img: 'venue', row: '2', col: '2', caption: 'Villa Aslı', meta: 'Yaz Davet' },
-            { img: 'landscape', row: '2', col: '3', caption: 'Teras Peyzaj', meta: 'Düzenleme' },
-          ].map((it, i) => {
-            const im: any = (IMAGES as any)[it.img];
-            return (
-              <div key={i} style={{ gridRow: it.row, gridColumn: it.col, position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
-                className="showcase-item">
-                <FloralImage palette={im.palette} seed={im.seed + 1} photo={im.photo} style={{ height: '100%' }} ratio="auto" />
-                <div style={{
-                  position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20,
-                  background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.7))',
-                  color: '#fff',
-                }}>
-                  <div style={{ fontSize: 10, letterSpacing: '0.25em', opacity: 0.85 }}>{it.meta}</div>
-                  <div className="serif" style={{ fontSize: 22, marginTop: 4 }}>{it.caption}</div>
-                </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 60 }} className="showcase-grid">
+          {items.map((it) => (
+            <div key={it.id} style={{ position: 'relative', overflow: 'hidden', borderRadius: 4, aspectRatio: '4/3' }}
+              className="showcase-item">
+              <img src={it.url} alt={it.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20,
+                background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.72))',
+                color: '#fff',
+              }}>
+                {it.category && <div style={{ fontSize: 10, letterSpacing: '0.25em', opacity: 0.85 }}>{it.category.toUpperCase()}</div>}
+                {it.title && <div className="serif" style={{ fontSize: 22, marginTop: 4 }}>{it.title}</div>}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
         <style>{`
-          @media (max-width: 760px) {
-            .showcase-item { grid-row: auto !important; grid-column: auto !important; height: 260px; }
-            section > .container > div[style*="grid-template-columns"] { grid-template-columns: 1fr 1fr !important; grid-template-rows: none !important; }
-          }
+          @media (max-width: 860px) { .showcase-grid { grid-template-columns: repeat(2, 1fr) !important; } }
+          @media (max-width: 520px) { .showcase-grid { grid-template-columns: 1fr !important; } }
         `}</style>
       </div>
     </section>

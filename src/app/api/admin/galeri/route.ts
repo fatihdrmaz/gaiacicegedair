@@ -98,6 +98,41 @@ export async function POST(req: Request) {
   return NextResponse.json({ error: "Geçersiz veri" }, { status: 422 });
 }
 
+const featureSchema = z.object({
+  id: z.string().uuid(),
+  featured: z.boolean(),
+});
+
+export async function PATCH(req: Request) {
+  const gate = await requireAdmin();
+  if ("error" in gate) {
+    return NextResponse.json({ error: gate.error }, { status: gate.status });
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Geçersiz istek" }, { status: 400 });
+  }
+
+  const parsed = featureSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Geçersiz veri" }, { status: 422 });
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("gallery_images")
+    .update({ featured: parsed.data.featured })
+    .eq("id", parsed.data.id);
+  if (error) {
+    console.error("[admin/galeri] öne çıkar hatası:", error);
+    return NextResponse.json({ error: "Güncellenemedi" }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
 export async function DELETE(req: Request) {
   const gate = await requireAdmin();
   if ("error" in gate) {
