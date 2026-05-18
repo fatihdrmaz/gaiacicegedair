@@ -30,7 +30,7 @@ const postSchema = z.object({
   excerpt: z.string().optional().default(""),
   body: z.string().optional().default(""),
   category: z.string().optional().default("Rehber"),
-  author: z.string().optional().default("GAIA Çiçeğe Dair"),
+  author: z.string().optional().default("GAIA Admin"),
   authorRole: z.string().optional().default(""),
   authorPhoto: z.string().optional().default(""),
   cover: z.string().optional().default(""),

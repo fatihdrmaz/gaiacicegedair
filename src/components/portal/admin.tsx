@@ -583,7 +583,7 @@ type BlogRow = {
 
 const emptyBlog = {
   id: '', slug: '', title: '', excerpt: '', body: '', category: 'Rehber',
-  author: 'GAIA Çiçeğe Dair', authorRole: '', authorPhoto: '', cover: '',
+  author: 'GAIA Admin', authorRole: '', authorPhoto: '', cover: '',
   readMin: 4, related: '', published: false,
 };
 
