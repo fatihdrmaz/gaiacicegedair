@@ -1,4 +1,4 @@
-import { Gallery, InstagramFeed } from '@/components/site/gallery';
+import { Gallery } from '@/components/site/gallery';
 
 export default function GaleriPage() {
   return (
@@ -11,7 +11,6 @@ export default function GaleriPage() {
         </div>
       </section>
       <Gallery />
-      <InstagramFeed />
     </>
   );
 }

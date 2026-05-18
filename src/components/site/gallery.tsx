@@ -87,33 +87,6 @@ export function Gallery({ preview = false }: { preview?: boolean }) {
   );
 }
 
-export function InstagramFeed() {
-  const posts = ['wedding','corporate','venue','dried','birthday','lobby'];
-  return (
-    <section style={{ padding: '100px 0', background: 'var(--paper)' }}>
-      <div className="container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40, flexWrap: 'wrap', gap: 20 }}>
-          <SectionTitle eyebrow="Instagram" title="@gaia.cicegedair" />
-          <a style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent)' }}>
-            <Icons.Instagram size={18} /> Takip Et
-          </a>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4 }} className="ig-grid">
-          {posts.map((p, i) => {
-            const im: any = (IMAGES as any)[p];
-            return (
-              <div key={i} style={{ aspectRatio: '1/1', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
-                <FloralImage palette={im.palette} seed={im.seed + 50} photo={im.photo} ratio="1/1" />
-              </div>
-            );
-          })}
-        </div>
-        <style>{`@media (max-width: 760px){ .ig-grid { grid-template-columns: repeat(3, 1fr) !important; } }`}</style>
-      </div>
-    </section>
-  );
-}
-
 export function FAQ() {
   const qs = [
     { q: 'Ne kadar önceden rezervasyon yapmalıyım?', a: 'Düğün gibi büyük etkinlikler için 3-6 ay önceden, küçük etkinlikler için 2-4 hafta önceden iletişime geçmenizi öneriyoruz. Yoğun sezon (Mayıs-Eylül) için erken rezervasyon önemli.' },

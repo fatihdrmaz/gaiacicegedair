@@ -43,7 +43,7 @@ export function Footer({ onQuote }: { onQuote?: () => void }) {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-              <SocialIcon icon="Instagram" href="https://instagram.com/gaia.cicegedair" />
+              <SocialIcon icon="Instagram" href="https://instagram.com/gaiacicegedair" />
               <SocialIcon icon="Whatsapp" href="https://wa.me/905312123267" />
               <SocialIcon icon="Mail" href="mailto:info@cicegedair.com" />
             </div>

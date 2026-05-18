@@ -6,7 +6,6 @@ import { Hero } from '@/components/site/hero';
 import { Services, SpecialtiesBand } from '@/components/site/services';
 import { About } from '@/components/site/about';
 import { Showcase, Testimonials, PressLogos, Process, CTAStrip } from '@/components/site/showcase';
-import { InstagramFeed } from '@/components/site/gallery';
 import { QuoteForm } from '@/components/site/quote-form';
 
 export default function HomePage() {
@@ -30,7 +29,6 @@ export default function HomePage() {
       <Testimonials />
       <Process />
       <PressLogos />
-      <InstagramFeed />
       <CTAStrip onQuote={() => openQuote()} onB2C={() => router.push('/ozel-gunlerim')} />
       <QuoteForm open={quote.open} onClose={() => setQuote({ open: false })} preset={quote.preset} />
     </>

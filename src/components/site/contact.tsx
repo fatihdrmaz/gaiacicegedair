@@ -52,7 +52,7 @@ export function Contact({ full = false }: { full?: boolean }) {
               <ContactRow icon="Phone" label="Telefon" value="+90 531 212 32 67" />
               <ContactRow icon="Mail" label="E-posta" value="info@cicegedair.com" />
               <ContactRow icon="Clock" label="Çalışma Saatleri" value="Pzt–Cmt · 09:00 – 19:00" />
-              <ContactRow icon="Instagram" label="Instagram" value="@gaia.cicegedair" />
+              <ContactRow icon="Instagram" label="Instagram" value="@gaiacicegedair" />
             </div>
           </div>
 
