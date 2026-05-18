@@ -329,7 +329,7 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
               <PortalCard padding={20} style={{ background: 'var(--accent)', color: '#fff', height: 'fit-content' }}>
                 <div className="overline" style={{ color: 'rgba(255,255,255,0.8)' }}>Toplam</div>
                 <div className="serif" style={{ fontSize: 42, marginTop: 8, lineHeight: 1 }}>{fmtTL(data.amount || 8500)}</div>
-                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>KDV dahil — Kalan bütçe: {fmtTL(41500)}</div>
+                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>KDV dahil</div>
                 {data.amount > 5000 && (
                   <div style={{ marginTop: 16, padding: 10, background: 'rgba(255,255,255,0.12)', borderRadius: 6, fontSize: 12, lineHeight: 1.5 }}>
                     ⚠ Bu talep bütçe üstü. Yöneticinizin onayına gönderilecek.

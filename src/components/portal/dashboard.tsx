@@ -25,8 +25,12 @@ export function PortalDashboard({ state }: { state: PortalState }) {
   }).slice(0, 5);
 
   const pending = orders.filter(o => o.status === 'pending');
-  const monthlyTotal = orders.filter(o => o.date.startsWith('2026-05')).reduce((s, o) => s + o.amount, 0);
-  const monthlyCount = orders.filter(o => o.date.startsWith('2026-05')).length;
+  const now0 = new Date();
+  const monthKey = `${now0.getFullYear()}-${String(now0.getMonth() + 1).padStart(2, '0')}`;
+  const monthName = now0.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  const monthlyTotal = orders.filter(o => (o.date || '').startsWith(monthKey)).reduce((s, o) => s + o.amount, 0);
+  const monthlyCount = orders.filter(o => (o.date || '').startsWith(monthKey)).length;
+  const activeCount = orders.filter(o => !['delivered', 'rejected'].includes(o.status)).length;
   const budget = 50000;
 
   const upcomingSpecial = events.filter(e => {
@@ -39,7 +43,7 @@ export function PortalDashboard({ state }: { state: PortalState }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div>
         <h2 className="serif" style={{ fontSize: 32, fontWeight: 500, lineHeight: 1.1 }}>
-          Merhaba {state.auth?.name?.split(' ')[0] || 'Ayşe'} —
+          Merhaba {state.auth?.name?.split(' ')[0] || 'tekrar hoş geldiniz'} —
         </h2>
         <p style={{ marginTop: 6, color: 'var(--ink-60)', fontSize: 15 }}>
           Bu hafta {thisWeek.length} teslimat planlandı, {pending.length} talep onayınızı bekliyor.
@@ -47,10 +51,10 @@ export function PortalDashboard({ state }: { state: PortalState }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }} className="stats-grid">
-        <StatCard label="Bu Ay Teslimat" value={monthlyCount} hint="Geçen aya göre +18%" trend="up" icon="Package" />
+        <StatCard label="Bu Ay Teslimat" value={monthlyCount} hint={monthName} icon="Package" />
         <StatCard label="Bu Ay Harcama" value={fmtTL(monthlyTotal)} hint={`${Math.round((monthlyTotal / budget) * 100)}% / ${fmtTL(budget)} bütçe`} icon="Gift" />
-        <StatCard label="Bekleyen Onaylar" value={pending.length} hint="2 talep size atandı" icon="Check" />
-        <StatCard label="Memnuniyet" value="98%" hint="Son 30 günde 24 teslimat" trend="up" icon="Star" />
+        <StatCard label="Bekleyen Onaylar" value={pending.length} hint="Onayınızı bekliyor" icon="Check" />
+        <StatCard label="Aktif Sipariş" value={activeCount} hint="Devam eden talepler" icon="Star" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }} className="dash-grid">
