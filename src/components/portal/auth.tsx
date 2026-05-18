@@ -13,7 +13,6 @@ export function PortalLogin() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
-  const [tab, setTab] = useState<'company' | 'admin'>('company');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -69,19 +68,7 @@ export function PortalLogin() {
           Hesabınıza giriş yaparak takviminizi planlayın, taleplerinizi yönetin ve siparişlerinizi takip edin.
         </p>
 
-        <div style={{ display: 'flex', gap: 0, marginTop: 36, marginBottom: 24, borderBottom: '1px solid var(--line)' }}>
-          {([['company', 'Kurumsal'], ['admin', 'GAIA Ekibi']] as const).map(([t, l]) => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              padding: '12px 20px', fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase',
-              fontWeight: 500,
-              color: tab === t ? 'var(--accent)' : 'var(--ink-60)',
-              borderBottom: tab === t ? '2px solid var(--accent)' : '2px solid transparent',
-              marginBottom: -1, cursor: 'pointer', background: 'transparent',
-            }}>{l}</button>
-          ))}
-        </div>
-
-        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 36 }}>
           <PortalInput label="E-posta" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="ornek@firma.com" required />
           <PortalInput label="Şifre" type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="••••••••" required />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
@@ -98,11 +85,9 @@ export function PortalLogin() {
           </PortalButton>
         </form>
 
-        {tab === 'company' && (
-          <div style={{ marginTop: 30, padding: 18, background: 'var(--accent-soft)', borderRadius: 8, fontSize: 14, color: 'var(--accent-deep)' }}>
-            Henüz hesabınız yok mu? <Link href="/portal/kayit" style={{ fontWeight: 500, cursor: 'pointer', borderBottom: '1px solid currentColor', color: 'inherit', textDecoration: 'none' }}>Kurumsal kayıt başvurusu</Link>
-          </div>
-        )}
+        <div style={{ marginTop: 30, padding: 18, background: 'var(--accent-soft)', borderRadius: 8, fontSize: 14, color: 'var(--accent-deep)' }}>
+          Henüz hesabınız yok mu? <Link href="/portal/kayit" style={{ fontWeight: 500, cursor: 'pointer', borderBottom: '1px solid currentColor', color: 'inherit', textDecoration: 'none' }}>Kurumsal kayıt başvurusu</Link>
+        </div>
 
       </div>
 
