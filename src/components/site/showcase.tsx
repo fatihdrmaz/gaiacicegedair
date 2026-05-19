@@ -68,40 +68,75 @@ export function Showcase() {
   );
 }
 
+type GoogleReview = { author: string; photo: string; rating: number; text: string; time: string };
+
 export function Testimonials() {
-  const items = [
-    { text: 'Düğünümüzü bir hikâye gibi yaşadık. GAIA ekibinin her detaydaki özeni, misafirlerimiz tarafından bile fark edildi.', name: 'Ezgi & Can', role: 'Villa Melisa Düğünü' },
-    { text: 'Lobi düzenlemelerimizde istikrarı ve yaratıcılığı bir arada bulmak kolay değil. GAIA ile çalışmak nefes aldırıyor.', name: 'Regnum Hotels',    role: 'Kurumsal Müşteri' },
-    { text: 'Yıl dönümümüz için hazırladıkları masa düzenlemesi, evdeki o akşamı bir restorandan daha özel kıldı.', name: 'Burak A.', role: 'Özel Davet' },
-  ];
+  const [data, setData] = useState<{ reviews: GoogleReview[]; rating: number; total: number; mapsUrl: string } | null>(null);
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
-    const t = setInterval(() => setIdx(i => (i + 1) % items.length), 7000);
-    return () => clearInterval(t);
+    let active = true;
+    fetch('/api/yorumlar')
+      .then(r => r.json())
+      .then(d => { if (active) setData(d); })
+      .catch(() => { if (active) setData({ reviews: [], rating: 0, total: 0, mapsUrl: '' }); });
+    return () => { active = false; };
   }, []);
+
+  const reviews = data?.reviews || [];
+
+  useEffect(() => {
+    if (reviews.length < 2) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % reviews.length), 8000);
+    return () => clearInterval(t);
+  }, [reviews.length]);
+
+  if (!data || reviews.length === 0) return null;
+
+  const r = reviews[idx];
+  const text = r.text.length > 320 ? r.text.slice(0, 320).trimEnd() + '…' : r.text;
 
   return (
     <section style={{ padding: '140px 0', background: 'var(--accent-deep)', color: 'var(--paper)' }}>
       <div className="container" style={{ maxWidth: 900, textAlign: 'center' }}>
-        <div style={{ color: 'var(--accent-soft)', marginBottom: 40 }}>
-          <Icons.Quote size={36} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 32 }}>
+          <span style={{ color: '#f5c542', fontSize: 20, letterSpacing: 2 }}>{'★'.repeat(Math.round(data.rating || 5))}</span>
+          <span style={{ fontSize: 14, opacity: 0.85 }}>
+            Google&apos;da {data.rating.toFixed(1)} · {data.total} değerlendirme
+          </span>
         </div>
-        <blockquote key={idx} className="serif fade-in" style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 300, lineHeight: 1.35, letterSpacing: '-0.01em', fontStyle: 'italic' }}>
-          "{items[idx].text}"
+
+        <blockquote key={idx} className="serif fade-in" style={{ fontSize: 'clamp(20px, 2.6vw, 34px)', fontWeight: 300, lineHeight: 1.4, letterSpacing: '-0.01em', fontStyle: 'italic' }}>
+          “{text}”
         </blockquote>
-        <div style={{ marginTop: 40 }}>
-          <div style={{ fontSize: 14, fontWeight: 500 }}>{items[idx].name}</div>
-          <div style={{ fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase', opacity: 0.7, marginTop: 6 }}>{items[idx].role}</div>
+
+        <div style={{ marginTop: 36 }}>
+          <div style={{ fontSize: 14, fontWeight: 500 }}>{r.author}</div>
+          <div style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.7, marginTop: 6 }}>
+            {'★'.repeat(Math.round(r.rating))} · {r.time}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 48 }}>
-          {items.map((_, i) => (
-            <button key={i} onClick={() => setIdx(i)} style={{
-              width: i === idx ? 32 : 8, height: 2, background: i === idx ? '#fff' : 'rgba(255,255,255,0.4)',
-              border: 'none', padding: 0, cursor: 'pointer', transition: 'all 0.4s',
-            }} />
-          ))}
-        </div>
+
+        {reviews.length > 1 && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 40 }}>
+            {reviews.map((_, i) => (
+              <button key={i} onClick={() => setIdx(i)} style={{
+                width: i === idx ? 32 : 8, height: 2, background: i === idx ? '#fff' : 'rgba(255,255,255,0.4)',
+                border: 'none', padding: 0, cursor: 'pointer', transition: 'all 0.4s',
+              }} />
+            ))}
+          </div>
+        )}
+
+        {data.mapsUrl && (
+          <a href={data.mapsUrl} target="_blank" rel="noopener noreferrer" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 36,
+            fontSize: 13, letterSpacing: '0.04em', color: '#fff',
+            borderBottom: '1px solid rgba(255,255,255,0.4)', paddingBottom: 4, textDecoration: 'none',
+          }}>
+            Google&apos;da tüm yorumları gör →
+          </a>
+        )}
       </div>
     </section>
   );
