@@ -20,7 +20,7 @@ export function Hero({ onCTA, variant = 'slideshow' }: HeroProps) {
 export function HeroSlideshow({ onCTA }: { onCTA?: (k: string) => void }) {
   const [idx, setIdx] = useState(0);
   const slides = [
-    { img: 'wedding',   tag: 'Düğün Organizasyonu', title: 'Hayatının anlamını\nçiçeklerle ör.', sub: 'Nikâh masasından gelin buketine — her detay bir duygu.' },
+    { img: 'wedding',   tag: 'Düğün Organizasyonu', title: 'Hayatının anlamını\nçiçeklerle anlat.', sub: 'Nikâh masasından gelin buketine — her detay bir duygu.' },
     { img: 'corporate', tag: 'Kurumsal',            title: 'Mekânınıza\nnefes verin.',          sub: 'Lobi, toplantı masası, açılış organizasyonları.' },
     { img: 'venue',     tag: 'Mekan Süsleme',       title: 'Mekânı, anının\nbir parçası kıl.',   sub: 'Restoran, teras, villa — sezonluk veya tek seferlik.' },
     { img: 'dried',     tag: 'Kurutulmuş Çiçek',    title: 'Zamanı durduran\nbir hediye.',       sub: 'Kurumsal promosyon ve butik hediyeler.' },

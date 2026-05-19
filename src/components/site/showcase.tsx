@@ -125,10 +125,10 @@ export function PressLogos() {
 
 export function Process() {
   const steps = [
-    { n: '01', title: 'Dinlemek', desc: 'Hikâyenizi, mekânınızı, beklentinizi anlıyoruz.' },
-    { n: '02', title: 'Tasarım', desc: 'Konsept ve moodboard önerileriyle birlikte çalışıyoruz.' },
-    { n: '03', title: 'Uygulama', desc: 'Atölyeden mekâna — her şey zamanında, her şey yerinde.' },
-    { n: '04', title: 'Hatıra',  desc: 'Bir fotoğraf albümü, bir kurutma ya da ertesi yıl bir sürpriz.' },
+    { n: '01', title: 'Dinliyoruz', desc: 'Hikâyenizi, mekânınızı ve hayalinizi dikkatle dinliyoruz.' },
+    { n: '02', title: 'Tasarlıyoruz', desc: 'Size özel konsept ve moodboard’u birlikte şekillendiriyoruz.' },
+    { n: '03', title: 'Uyguluyoruz', desc: 'Atölyeden mekâna; her detayı zamanında ve özenle hayata geçiriyoruz.' },
+    { n: '04', title: 'Anılarınızda oluyoruz', desc: 'Bir kare, kurutulmuş bir demet ya da gelecek yıl bir sürprizle yanınızdayız.' },
   ];
   return (
     <section style={{ padding: '120px 0', background: 'var(--paper)' }}>

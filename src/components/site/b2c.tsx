@@ -103,7 +103,10 @@ export function B2CStep1({ days, addDay, removeDay, updateDay, onNext }: { days:
   return (
     <div>
       <h2 className="serif" style={{ fontSize: 30, marginBottom: 10, fontWeight: 400 }}>Özel günlerini ekle</h2>
-      <p style={{ color: 'var(--ink-60)', marginBottom: 30 }}>Yıl boyunca hatırlamak istediğin günleri bir kerede gir.</p>
+      <p style={{ color: 'var(--ink-60)', marginBottom: 14 }}>Yıl boyunca hatırlamak istediğin günleri bir kerede gir.</p>
+      <div style={{ marginBottom: 30, padding: '10px 14px', background: 'var(--accent-soft)', color: 'var(--accent-deep)', borderRadius: 6, fontSize: 13 }}>
+        ℹ Teslimat yalnızca <strong>İstanbul içinde</strong> geçerlidir. Tarih, en erken bugünden 2 gün sonrası seçilebilir.
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {days.map((d, i) => (
           <div key={d.id} style={{
@@ -114,7 +117,7 @@ export function B2CStep1({ days, addDay, removeDay, updateDay, onNext }: { days:
               <Icons.Calendar size={20} />
             </div>
             <Field label="Günün Adı"><Input value={d.name} onChange={(e: any) => updateDay(d.id, { name: e.target.value })} placeholder="Örn: Annemin Doğum Günü" /></Field>
-            <Field label="Tarih"><Input type="date" min={new Date().toISOString().slice(0, 10)} value={d.date} onChange={(e: any) => updateDay(d.id, { date: e.target.value })} /></Field>
+            <Field label="Tarih"><Input type="date" min={new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10)} max={new Date(Date.now() + 367 * 86400000).toISOString().slice(0, 10)} value={d.date} onChange={(e: any) => updateDay(d.id, { date: e.target.value })} /></Field>
             <Field label="Vesile"><Select value={d.occasion} onChange={(e: any) => updateDay(d.id, { occasion: e.target.value })} options={['Doğum Günü','Yıl Dönümü','Anneler Günü','Babalar Günü','Sevgililer Günü','Teşekkür','Diğer']} /></Field>
             {days.length > 1 && (
               <button onClick={() => removeDay(d.id)} style={{ color: 'var(--ink-40)', padding: 8 }}>

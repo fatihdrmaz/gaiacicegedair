@@ -18,7 +18,7 @@ export const PHOTOS: Record<string, string> = {
   // Hero / wedding — gerçek konuya uygun Unsplash görselleri
   heroWedding: 'https://images.unsplash.com/photo-1641834919507-b0271fe5186b?w=1600&q=80',
   heroTable: 'https://images.unsplash.com/photo-1769812343285-ec0775437680?w=1600&q=80',
-  heroCorporate: 'https://images.unsplash.com/photo-1758714919725-d2740fc99f14?w=1600&q=80',
+  heroCorporate: 'https://images.unsplash.com/photo-1759954644563-cc2884f7a5dc?w=1600&q=80',
   heroProposal: 'https://images.unsplash.com/photo-1589095181425-c038b3871b6a?w=1600&q=80',
   heroDried: 'https://images.unsplash.com/photo-1675089728888-5a8a54a46a8d?w=1600&q=80',
 

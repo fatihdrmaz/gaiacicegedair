@@ -120,6 +120,7 @@ export function PortalRegister() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [modal, setModal] = useState<'kvkk' | 'terms' | null>(null);
   const update = (k: string, v: any) => setData((d: any) => ({ ...d, [k]: v }));
 
   const submitApplication = async () => {
@@ -208,13 +209,19 @@ export function PortalRegister() {
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, border: '1px solid var(--line)', borderRadius: 6, cursor: 'pointer' }}>
                   <input type="checkbox" checked={data.kvkk} onChange={e => update('kvkk', e.target.checked)} style={{ marginTop: 4 }} />
                   <span style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--ink-60)' }}>
-                    <strong style={{ color: 'var(--ink)' }}>KVKK Aydınlatma Metni</strong>'ni okudum, kişisel verilerimin işlenmesini kabul ediyorum.
+                    <button type="button" onClick={e => { e.preventDefault(); setModal('kvkk'); }}
+                      style={{ color: 'var(--accent)', fontWeight: 600, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}>
+                      KVKK Aydınlatma Metni
+                    </button>'ni okudum, kişisel verilerimin işlenmesini kabul ediyorum.
                   </span>
                 </label>
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, border: '1px solid var(--line)', borderRadius: 6, cursor: 'pointer' }}>
                   <input type="checkbox" checked={data.terms} onChange={e => update('terms', e.target.checked)} style={{ marginTop: 4 }} />
                   <span style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--ink-60)' }}>
-                    <strong style={{ color: 'var(--ink)' }}>Kullanıcı Sözleşmesi</strong>'ni okudum ve kabul ediyorum.
+                    <button type="button" onClick={e => { e.preventDefault(); setModal('terms'); }}
+                      style={{ color: 'var(--accent)', fontWeight: 600, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}>
+                      Kullanıcı Sözleşmesi
+                    </button>'ni okudum ve kabul ediyorum.
                   </span>
                 </label>
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, cursor: 'pointer' }}>
@@ -246,6 +253,40 @@ export function PortalRegister() {
 
         <style>{`@media (max-width: 640px){ .form2 { grid-template-columns: 1fr !important; } .form2 > div[style*="span 2"] { grid-column: span 1 !important; } }`}</style>
       </div>
+
+      {modal && (
+        <div onClick={() => setModal(null)} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(31,35,32,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', maxWidth: 640, width: '100%', maxHeight: '85vh', overflowY: 'auto', borderRadius: 8, padding: '30px 34px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <h3 className="serif" style={{ fontSize: 24, fontWeight: 500 }}>
+                {modal === 'kvkk' ? 'KVKK Aydınlatma Metni' : 'Kullanıcı Sözleşmesi'}
+              </h3>
+              <button type="button" onClick={() => setModal(null)} aria-label="Kapat"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-60)', padding: 4 }}>
+                <Icons.Close size={20} />
+              </button>
+            </div>
+            <div style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-60)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {(modal === 'kvkk' ? [
+                'GAIA Çiçeğe Dair, veri sorumlusu sıfatıyla; kurumsal başvurunuz sırasında paylaştığınız firma bilgileri, yetkili kişi kimlik ve iletişim verilerini işler.',
+                'Verileriniz; başvurunuzun değerlendirilmesi, kurumsal hesabınızın oluşturulması, sipariş ve teslimat süreçlerinin yürütülmesi ile yasal yükümlülüklerin yerine getirilmesi amaçlarıyla işlenir.',
+                'Veriler; yalnızca hizmetin sağlanması için gerekli olduğu ölçüde altyapı ve hizmet sağlayıcılarımızla ve yasal olarak yetkili kurumlarla paylaşılır; pazarlama amacıyla üçüncü taraflara satılmaz.',
+                '6698 sayılı KVKK md. 11 kapsamında verilerinize erişme, düzeltilmesini veya silinmesini isteme haklarına sahipsiniz. Talepleriniz için info@cicegedair.com adresine yazabilirsiniz.',
+                'Detaylı metne /kvkk sayfasından ulaşabilirsiniz.',
+              ] : [
+                'Bu sözleşme, GAIA Çiçeğe Dair kurumsal portalını kullanan firma ile GAIA Çiçeğe Dair arasındaki kullanım koşullarını düzenler.',
+                'Kurumsal başvurunuz GAIA ekibi tarafından incelenir; onaylanması halinde portal erişiminiz açılır. Onay zorunlu olup başvuru tek başına üyelik hakkı doğurmaz.',
+                'Portal üzerinden oluşturulan siparişler, GAIA ile yapılan fiyat ve içerik mutabakatına tabidir. Bütçe aşan talepler yönetici onayına gönderilebilir.',
+                'Hesap güvenliğiniz ve giriş bilgilerinizin gizliliği sizin sorumluluğunuzdadır. GAIA, hizmeti iyileştirmek amacıyla sözleşme şartlarını güncelleyebilir.',
+                'Sorularınız için info@cicegedair.com adresinden bize ulaşabilirsiniz.',
+              ]).map((p, i) => <p key={i} style={{ margin: 0 }}>{p}</p>)}
+            </div>
+            <PortalButton variant="primary" onClick={() => setModal(null)} style={{ marginTop: 24 }}>
+              Anladım, kapat
+            </PortalButton>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

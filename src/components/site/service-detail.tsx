@@ -86,34 +86,6 @@ export function ServiceDetailPage({ serviceKey, onQuote }: { serviceKey: string;
         </div>
       </section>
 
-      <section style={{ padding: '120px 0', background: 'var(--paper)' }}>
-        <div className="container">
-          <SectionTitle eyebrow="Paketler" title={<>Başlangıç için <em style={{ color: 'var(--accent)', fontStyle: 'italic' }}>yön</em>.</>}
-            subtitle="Her proje özel tasarım; aşağıdakiler genel bir yönlendirme için." />
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(s.packages.length, 3)}, 1fr)`, gap: 28, marginTop: 60 }} className="pkg-grid">
-            {s.packages.map((p: any, i: number) => (
-              <Reveal key={i} delay={i * 0.08}>
-                <div style={{ padding: 32, border: '1px solid var(--line)', background: 'var(--paper-warm)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <div className="overline" style={{ color: 'var(--accent)' }}>{p.name}</div>
-                  <div className="serif" style={{ fontSize: 32, marginTop: 12, fontWeight: 500 }}>{p.range}</div>
-                  <p style={{ fontSize: 14, color: 'var(--ink-60)', marginTop: 8, lineHeight: 1.5 }}>{p.desc}</p>
-                  <ul style={{ marginTop: 20, listStyle: 'none', padding: 0, flex: 1 }}>
-                    {p.includes.map((inc: string, j: number) => (
-                      <li key={j} style={{ display: 'flex', gap: 10, padding: '8px 0', fontSize: 14, color: 'var(--ink)', borderBottom: '1px dashed var(--line)' }}>
-                        <span style={{ color: 'var(--accent)' }}>✦</span> {inc}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button variant="outlinedAccent" onClick={() => onQuote && onQuote(`${s.title} — ${p.name}`)} style={{ marginTop: 24 }} iconRight={<Icons.Arrow size={14} />}>
-                    Teklif Al
-                  </Button>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-          <style>{`@media (max-width: 860px){ .pkg-grid { grid-template-columns: 1fr !important; } }`}</style>
-        </div>
-      </section>
 
       <section style={{ padding: '120px 0', background: 'var(--paper-warm)' }}>
         <div className="container" style={{ maxWidth: 880 }}>

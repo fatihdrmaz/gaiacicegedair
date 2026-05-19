@@ -84,7 +84,7 @@ export function Nav(_props: { darkHero?: boolean; onOpenQuote?: () => void }) {
         </nav>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <Link href="/portal/giris" style={{ textDecoration: 'none' }}>
+          <Link href="/portal/giris" style={{ textDecoration: 'none' }} className="nav-cta">
             <Button size="sm" variant={inverted ? 'white' : 'primary'}>
               {portalAuthed ? 'Kurumsal Panel' : 'Kurumsal'}
             </Button>
@@ -124,6 +124,7 @@ export function Nav(_props: { darkHero?: boolean; onOpenQuote?: () => void }) {
       @media (max-width: 960px) {
         .desktop-nav { display: none !important; }
         .mobile-only { display: block !important; }
+        .nav-cta { display: none !important; }
       }
     `}</style>
     </>
