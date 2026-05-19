@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button, FloralImage, Reveal, SectionTitle } from '@/components/ui';
+import { Button, Reveal, SectionTitle } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
 import { createClient } from '@/lib/supabase/client';
 
@@ -187,10 +187,13 @@ export function Process() {
 
 export function CTAStrip({ onQuote, onB2C }: { onQuote?: () => void; onB2C?: () => void }) {
   return (
-    <section style={{ padding: '120px 0', background: 'var(--accent)', color: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: -80, right: -80, opacity: 0.18 }}>
-        <FloralImage palette="sage" seed={100} ratio="1/1" style={{ width: 400, height: 400 }} />
-      </div>
+    <section style={{ padding: '120px 0', color: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
+      <img
+        src="https://images.unsplash.com/photo-1608935387815-8963f8d5cf88?w=1900&q=80"
+        alt=""
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+      />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(42,67,53,0.80), rgba(42,67,53,0.92))' }} />
       <div className="container" style={{ position: 'relative', textAlign: 'center', maxWidth: 820 }}>
         <h2 className="serif" style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 400, letterSpacing: '-0.01em', lineHeight: 1.1 }}>
           Hayalindeki günü <em style={{ fontStyle: 'italic' }}>çiçekle</em> yaz.
