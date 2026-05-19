@@ -259,14 +259,20 @@ export function B2CStep3({ days, updateDay, onBack, onNext }: { days: Day[]; upd
 export function B2CStep4({ days, total, onBack, onConfirm }: { days: Day[]; total: number; onBack: () => void; onConfirm: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [buyer, setBuyer] = useState({ name: '', email: '', phone: '' });
+  const upB = (k: string, v: string) => setBuyer(b => ({ ...b, [k]: v }));
 
   const submit = async () => {
+    if (!buyer.name.trim() || !buyer.email.trim() || !buyer.phone.trim()) {
+      setError('Lütfen ad, e-posta ve telefon bilgilerinizi girin.');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
       const res = await fetch('/api/odeme/baslat', {
         method: 'POST',
-        body: JSON.stringify({ days }),
+        body: JSON.stringify({ days, buyer }),
         headers: { 'content-type': 'application/json' },
       });
       const json = await res.json();
@@ -323,6 +329,17 @@ export function B2CStep4({ days, total, onBack, onConfirm }: { days: Day[]; tota
         </div>
 
         <div>
+          <div style={{ background: 'var(--paper-warm)', padding: 24, marginBottom: 16 }}>
+            <div className="overline" style={{ color: 'var(--accent)', marginBottom: 14 }}>İletişim Bilgileriniz</div>
+            <p style={{ fontSize: 12.5, color: 'var(--ink-60)', marginBottom: 14, lineHeight: 1.5 }}>
+              Siparişiniz hakkında sizi bilgilendirebilmemiz için gereklidir.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Field label="Ad Soyad" required><Input value={buyer.name} onChange={(e: any) => upB('name', e.target.value)} placeholder="Adınız Soyadınız" /></Field>
+              <Field label="E-posta" required><Input type="email" value={buyer.email} onChange={(e: any) => upB('email', e.target.value)} placeholder="ornek@email.com" /></Field>
+              <Field label="Telefon" required><Input value={buyer.phone} onChange={(e: any) => upB('phone', e.target.value)} placeholder="+90 5xx xxx xx xx" /></Field>
+            </div>
+          </div>
           <div style={{ background: 'var(--accent)', color: '#fff', padding: 30 }}>
             <div className="overline" style={{ opacity: 0.8, marginBottom: 16 }}>Toplam</div>
             <div className="serif" style={{ fontSize: 48, lineHeight: 1 }}>{total.toLocaleString('tr-TR')} ₺</div>

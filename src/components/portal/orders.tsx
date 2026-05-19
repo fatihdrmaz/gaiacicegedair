@@ -107,20 +107,27 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<any>({
-    template: null,
+    productId: '',
     type: '',
     recipient: '', phone: '', addrId: '', addr: '', city: 'İstanbul',
     date: '', time: '10:00',
     palette: 'cream', concept: '',
     note: '', brandedCard: true,
-    multiAddr: false, addrList: [],
     amount: 0,
   });
   const [done, setDone] = useState(false);
   const [newId, setNewId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [products, setProducts] = useState<{ id: string; name: string; description: string; price: number }[] | null>(null);
   const update = (k: string, v: any) => setData((d: any) => ({ ...d, [k]: v }));
+
+  useEffect(() => {
+    fetch('/api/portal/urunler')
+      .then(r => r.json())
+      .then(d => setProducts(d.products || []))
+      .catch(() => setProducts([]));
+  }, []);
 
   const submitOrder = async () => {
     setSubmitting(true);
@@ -130,7 +137,7 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          template: data.template || 'custom',
+          productId: data.productId,
           recipient: data.recipient,
           addrId: data.addrId,
           addr: data.addr,
@@ -149,6 +156,10 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
         setError(json.error || 'Sipariş oluşturulamadı.');
         return;
       }
+      if (json.paymentPageUrl) {
+        window.location.href = json.paymentPageUrl;
+        return;
+      }
       setNewId(json.id || '');
       setDone(true);
     } catch {
@@ -158,14 +169,6 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
     }
   };
 
-  const templates = [
-    { id: 'lobi',     title: 'Standart Lobi Yenileme', desc: 'Haftalık taze + vazo', price: 8500, photo: 'cLobby', icon: 'Bouquet' },
-    { id: 'meeting',  title: 'Toplantı Masası',        desc: 'Alçak, profesyonel',  price: 2800, photo: 'cMeeting', icon: 'Hall' },
-    { id: 'birthday', title: 'Çalışan Doğumgünü',      desc: 'Pastel buket + kart', price: 1450, photo: 'pBouquet', icon: 'Cake' },
-    { id: 'welcome',  title: 'VIP Karşılama',           desc: 'Premium orkide',      price: 4800, photo: 'cWelcome', icon: 'Sparkle' },
-    { id: 'opening',  title: 'Açılış Çelengi',          desc: 'Marka kartlı',        price: 3200, photo: 'pWreath', icon: 'Gift' },
-    { id: 'custom',   title: 'Özel Talep',              desc: 'Sıfırdan tasarım',    price: 0,    photo: 'cWelcome', icon: 'Plus' },
-  ];
   const palettes = [
     { id: 'cream',  label: 'Krem & Beyaz',    colors: ['#f5e8d8', '#fff', '#e0d6c0'] },
     { id: 'pastel', label: 'Pastel Pembe',    colors: ['#f8d3da', '#fce0e8', '#e8a4b0'] },
@@ -192,7 +195,26 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
     );
   }
 
-  const steps = ['Şablon', 'Alıcı', 'Tasarım', 'Onay'];
+  if (products === null) {
+    return <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-60)' }}>Yükleniyor…</div>;
+  }
+  if (products.length === 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, padding: '70px 20px', textAlign: 'center', maxWidth: 560, margin: '0 auto' }}>
+        <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icons.Bouquet size={32} />
+        </div>
+        <h2 className="serif" style={{ fontSize: 28, fontWeight: 500 }}>Henüz size tanımlı ürün yok</h2>
+        <p style={{ color: 'var(--ink-60)', fontSize: 15, lineHeight: 1.6 }}>
+          Sipariş oluşturabilmek için firmanıza özel ürün ve fiyatların tanımlanması gerekir.
+          Lütfen <strong>müşteri temsilciniz ile görüşün</strong>.
+        </p>
+        <PortalButton variant="ghost" onClick={() => router.push('/portal/dashboard')}>Panele Dön</PortalButton>
+      </div>
+    );
+  }
+
+  const steps = ['Ürün', 'Alıcı', 'Tasarım', 'Onay'];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 980, margin: '0 auto', width: '100%' }}>
@@ -216,14 +238,13 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
       <PortalCard padding={32}>
         {step === 0 && (
           <>
-            <h2 className="serif" style={{ fontSize: 24, fontWeight: 500, marginBottom: 8 }}>Bir şablon seçin</h2>
-            <p style={{ color: 'var(--ink-60)', fontSize: 14, marginBottom: 28 }}>Sık kullandığınız taleplerden birini seçerek hızlıca başlayın veya özel talep oluşturun.</p>
+            <h2 className="serif" style={{ fontSize: 24, fontWeight: 500, marginBottom: 8 }}>Bir ürün seçin</h2>
+            <p style={{ color: 'var(--ink-60)', fontSize: 14, marginBottom: 28 }}>Firmanıza tanımlı ürünler ve size özel fiyatlar aşağıdadır.</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
-              {templates.map(t => {
-                const I = (Icons as any)[t.icon] || (Icons as any).Flower;
-                const sel = data.template === t.id;
+              {products.map(p => {
+                const sel = data.productId === p.id;
                 return (
-                  <button key={t.id} onClick={() => { update('template', t.id); update('type', t.title); update('amount', t.price); }}
+                  <button key={p.id} onClick={() => { update('productId', p.id); update('type', p.name); update('amount', p.price); }}
                     style={{
                       padding: 18, textAlign: 'left', background: sel ? 'var(--accent-soft)' : 'var(--paper-warm)',
                       border: '1px solid ' + (sel ? 'var(--accent)' : 'var(--line)'),
@@ -231,15 +252,15 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
                     }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <I size={18} />
+                        <Icons.Bouquet size={18} />
                       </div>
                       {sel && <Icons.Check size={18} />}
                     </div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 500 }}>{t.title}</div>
-                      <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 3 }}>{t.desc}</div>
+                      <div style={{ fontSize: 14, fontWeight: 500 }}>{p.name}</div>
+                      {p.description && <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 3 }}>{p.description}</div>}
                     </div>
-                    {t.price > 0 && <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 500 }}>{fmtTL(t.price)} itibaren</div>}
+                    <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 500 }}>{fmtTL(p.price)}</div>
                   </button>
                 );
               })}
@@ -317,25 +338,20 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 30 }} className="review-grid">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <ReviewRow label="Şablon" value={templates.find(t => t.id === data.template)?.title || data.type || '—'} />
+                <ReviewRow label="Ürün" value={data.type || '—'} />
                 <ReviewRow label="Alıcı" value={data.recipient || '—'} />
+                {data.phone && <ReviewRow label="Telefon" value={data.phone} />}
                 <ReviewRow label="Adres" value={`${data.addr || '—'}, ${data.city}`} />
                 <ReviewRow label="Tarih" value={`${fmtDate(data.date)} · ${data.time}`} />
                 <ReviewRow label="Palet" value={palettes.find(p => p.id === data.palette)?.label || '—'} />
                 {data.concept && <ReviewRow label="Konsept" value={data.concept} />}
                 {data.note && <ReviewRow label="Kart Notu" value={`"${data.note}"`} />}
-                <ReviewRow label="Markalı Kart" value={data.brandedCard ? 'Evet' : 'Hayır'} />
               </div>
 
               <PortalCard padding={20} style={{ background: 'var(--accent)', color: '#fff', height: 'fit-content' }}>
-                <div className="overline" style={{ color: 'rgba(255,255,255,0.8)' }}>Toplam</div>
-                <div className="serif" style={{ fontSize: 42, marginTop: 8, lineHeight: 1 }}>{fmtTL(data.amount || 8500)}</div>
-                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>KDV dahil</div>
-                {data.amount > 5000 && (
-                  <div style={{ marginTop: 16, padding: 10, background: 'rgba(255,255,255,0.12)', borderRadius: 6, fontSize: 12, lineHeight: 1.5 }}>
-                    ⚠ Bu talep bütçe üstü. Yöneticinizin onayına gönderilecek.
-                  </div>
-                )}
+                <div className="overline" style={{ color: 'rgba(255,255,255,0.8)' }}>Tutar</div>
+                <div className="serif" style={{ fontSize: 42, marginTop: 8, lineHeight: 1 }}>{fmtTL(Number(data.amount) || 0)}</div>
+                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>KDV dahil · kredi kartı ile ödenir</div>
               </PortalCard>
             </div>
           </>
@@ -344,8 +360,8 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
         <div style={{ marginTop: 36, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--line)', paddingTop: 24 }}>
           {step > 0 ? <PortalButton variant="ghost" onClick={() => setStep(step - 1)} icon={<Icons.ArrowLeft size={14} />}>Geri</PortalButton> : <PortalButton variant="ghost" onClick={() => router.push('/portal/dashboard')}>İptal</PortalButton>}
           {step < 3
-            ? <PortalButton variant="primary" onClick={() => setStep(step + 1)} iconRight={<Icons.Arrow size={14} />} disabled={step === 0 && !data.template}>Devam</PortalButton>
-            : <PortalButton variant="primary" size="lg" onClick={submitOrder} iconRight={<Icons.Check size={14} />} disabled={submitting}>{submitting ? 'Gönderiliyor…' : 'Talebi Gönder'}</PortalButton>}
+            ? <PortalButton variant="primary" onClick={() => setStep(step + 1)} iconRight={<Icons.Arrow size={14} />} disabled={step === 0 && !data.productId}>Devam</PortalButton>
+            : <PortalButton variant="primary" size="lg" onClick={submitOrder} iconRight={<Icons.Arrow size={14} />} disabled={submitting}>{submitting ? 'İşleniyor…' : 'Ödemeye Geç'}</PortalButton>}
         </div>
         {error && (
           <div style={{ marginTop: 16, padding: '10px 14px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 13 }}>{error}</div>

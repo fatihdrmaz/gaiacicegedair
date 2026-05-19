@@ -24,6 +24,8 @@ const companyNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { id: 'admin',          label: 'Admin Panel',  icon: 'Settings', href: '/admin' },
   { id: 'admin-pending',  label: 'Onaylar',      icon: 'Check',    href: '/admin/bekleyen-firmalar' },
+  { id: 'admin-companies',label: 'Firmalar',     icon: 'User',     href: '/admin/firmalar' },
+  { id: 'admin-products', label: 'Ürünler',      icon: 'Bouquet',  href: '/admin/urunler' },
   { id: 'admin-orders',   label: 'Siparişler',   icon: 'Package',  href: '/admin/siparisler' },
   { id: 'admin-kanban',   label: 'Kanban',       icon: 'Hall',     href: '/admin/kanban' },
   { id: 'admin-calendar', label: 'Takvim',       icon: 'Calendar', href: '/admin/takvim' },
@@ -44,6 +46,8 @@ const titleMap: Record<string, string> = {
   '/portal/raporlar':       'Raporlar',
   '/admin':                 'Admin Panel',
   '/admin/bekleyen-firmalar':'Bekleyen Firma Onayları',
+  '/admin/firmalar':        'Firmalar',
+  '/admin/urunler':         'Ürün Kataloğu',
   '/admin/siparisler':      'Tüm Siparişler',
   '/admin/kanban':          'Sipariş Kanban',
   '/admin/takvim':          'Takvim — Tüm Talepler',

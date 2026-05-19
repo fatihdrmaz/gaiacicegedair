@@ -29,12 +29,34 @@ export async function POST(req: Request) {
     return NextResponse.redirect(`${siteUrl}/ozel-gunlerim?odeme=hata`, 303);
   }
 
-  const orderId = result.conversationId;
+  const conv = result.conversationId || "";
   const paid = result.paymentStatus === "SUCCESS" && result.status === "success";
 
-  if (!orderId) {
+  if (!conv) {
     return NextResponse.redirect(`${siteUrl}/ozel-gunlerim?odeme=hata`, 303);
   }
+
+  // Kurumsal sipariş ödemesi (conversationId "corp-" ön ekli)
+  if (conv.startsWith("corp-")) {
+    const corpId = conv.slice(5);
+    if (!paid) {
+      return NextResponse.redirect(`${siteUrl}/portal/siparisler/${corpId}?odeme=basarisiz`, 303);
+    }
+    await admin
+      .from("corporate_orders")
+      .update({ status: "approved", updated_at: new Date().toISOString() })
+      .eq("id", corpId);
+    await admin.from("order_events").insert({
+      order_id: corpId,
+      order_type: "corporate",
+      event_type: "status_change",
+      new_status: "approved",
+      note: "Ödeme alındı",
+    });
+    return NextResponse.redirect(`${siteUrl}/portal/siparisler/${corpId}?odeme=basarili`, 303);
+  }
+
+  const orderId = conv;
 
   if (!paid) {
     await admin.from("b2c_orders").update({ status: "failed" }).eq("id", orderId);

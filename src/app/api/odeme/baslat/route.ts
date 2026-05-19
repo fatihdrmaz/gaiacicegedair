@@ -25,6 +25,11 @@ const daySchema = z.object({
 
 const schema = z.object({
   days: z.array(daySchema).min(1, "En az bir özel gün gerekli"),
+  buyer: z.object({
+    name: z.string().min(2, "Ad soyad gerekli"),
+    email: z.string().email("Geçerli e-posta gerekli"),
+    phone: z.string().min(7, "Telefon gerekli"),
+  }),
 });
 
 export async function POST(req: Request) {
@@ -42,7 +47,7 @@ export async function POST(req: Request) {
       { status: 422 },
     );
   }
-  const { days } = parsed.data;
+  const { days, buyer } = parsed.data;
 
   // Fiyatlar sunucuda hesaplanır — istemciden gelen total'a güvenilmez.
   const items = days.map((d) => ({
@@ -65,8 +70,8 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
-  const buyerName = items[0]?.recipient || "GAIA Müşteri";
-  const buyerEmail = userEmail || `siparis@cicegedair.com`;
+  const buyerName = buyer.name;
+  const buyerEmail = buyer.email;
 
   const { data: order, error: orderErr } = await admin
     .from("b2c_orders")
@@ -74,6 +79,7 @@ export async function POST(req: Request) {
       user_id: userId,
       buyer_name: buyerName,
       buyer_email: buyerEmail,
+      buyer_phone: buyer.phone,
       status: "pending",
       total_amount: total,
     })

@@ -6,11 +6,10 @@ import { sendMail, GAIA_NOTIFY_EMAIL } from "@/lib/resend";
 import { YeniSiparisEmail } from "@/emails/yeni-siparis";
 import { SiparisDurumuEmail } from "@/emails/siparis-durumu";
 import { TEMPLATE_LABELS } from "@/lib/portal-map";
-
-const APPROVAL_THRESHOLD = 5000;
+import { initCheckoutForm, iyzicoConfigured } from "@/lib/iyzico";
 
 const createSchema = z.object({
-  template: z.string().optional().default("custom"),
+  productId: z.string().uuid("Ürün seçilmedi"),
   recipient: z.string().min(1, "Alıcı gerekli"),
   addrId: z.string().optional().default(""),
   addr: z.string().optional().default(""),
@@ -21,7 +20,6 @@ const createSchema = z.object({
   concept: z.string().optional().default(""),
   note: z.string().optional().default(""),
   recipientPhone: z.string().optional().default(""),
-  amount: z.number().optional().default(0),
 });
 
 const patchSchema = z.object({
@@ -64,7 +62,7 @@ export async function POST(req: Request) {
 
   const { data: company } = await supabase
     .from("companies")
-    .select("id, name, monthly_budget")
+    .select("id, name, email, phone, contact_name")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -75,15 +73,33 @@ export async function POST(req: Request) {
     );
   }
 
-  const requiresApproval = d.amount > APPROVAL_THRESHOLD;
   const admin = createAdminClient();
+
+  // Ürün firmaya tanımlı mı? Fiyat sunucuda belirlenir.
+  const { data: cp } = await admin
+    .from("company_products")
+    .select("price, products(name)")
+    .eq("company_id", company.id)
+    .eq("product_id", d.productId)
+    .maybeSingle();
+
+  if (!cp) {
+    return NextResponse.json(
+      { error: "Bu ürün firmanıza tanımlı değil." },
+      { status: 403 },
+    );
+  }
+  const price = Number(cp.price) || 0;
+  const productName =
+    (cp.products as unknown as { name?: string } | null)?.name || "Ürün";
 
   const { data: order, error } = await admin
     .from("corporate_orders")
     .insert({
       company_id: company.id,
       created_by: user.id,
-      template: d.template,
+      product_id: d.productId,
+      template: productName,
       recipient_name: d.recipient,
       recipient_phone: d.recipientPhone || null,
       address_id: d.addrId || null,
@@ -94,9 +110,9 @@ export async function POST(req: Request) {
       concept: d.concept || null,
       palette: d.palette || null,
       note: d.note || null,
-      budget: d.amount,
-      requires_approval: requiresApproval,
-      status: requiresApproval ? "reviewing" : "pending",
+      budget: price,
+      requires_approval: false,
+      status: "pending",
     })
     .select("id")
     .single();
@@ -110,7 +126,7 @@ export async function POST(req: Request) {
     order_id: order.id,
     order_type: "corporate",
     event_type: "status_change",
-    new_status: requiresApproval ? "reviewing" : "pending",
+    new_status: "pending",
     note: "Sipariş oluşturuldu",
     created_by: user.id,
   });
@@ -122,12 +138,12 @@ export async function POST(req: Request) {
       react: YeniSiparisEmail({
         data: {
           company: company.name || "—",
-          type: TEMPLATE_LABELS[d.template] || d.template,
+          type: productName,
           recipient: d.recipient,
           address: `${d.addr}, ${d.city}`,
           deliveryDate: d.date,
-          budget: d.amount,
-          requiresApproval,
+          budget: price,
+          requiresApproval: false,
           note: d.note,
         },
       }),
@@ -136,7 +152,39 @@ export async function POST(req: Request) {
     console.error("[portal/siparis] e-posta hatası:", err);
   }
 
-  return NextResponse.json({ ok: true, id: order.id, requiresApproval });
+  // Kredi kartı ödemesi — iyzico checkout
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  if (!iyzicoConfigured) {
+    // iyzico anahtarı yok — geliştirme modu, sipariş oluşturuldu kabul edilir
+    return NextResponse.json({ ok: true, id: order.id, devMode: true });
+  }
+  try {
+    const result = await initCheckoutForm({
+      orderId: `corp-${order.id}`,
+      total: price,
+      callbackUrl: `${siteUrl}/api/odeme/callback`,
+      buyer: {
+        id: company.id,
+        name: (company.contact_name || "GAIA").split(" ")[0] || "GAIA",
+        surname: (company.contact_name || "Müşteri").split(" ").slice(1).join(" ") || "Müşteri",
+        email: company.email || "siparis@cicegedair.com",
+        phone: company.phone || "+905555555555",
+        address: `${d.addr || ""} ${d.city || "İstanbul"}`.trim(),
+        city: d.city || "İstanbul",
+      },
+      basketItems: [{ id: order.id, name: productName, price }],
+    });
+    if (result.status !== "success" || !result.paymentPageUrl) {
+      return NextResponse.json(
+        { error: result.errorMessage || "Ödeme başlatılamadı" },
+        { status: 502 },
+      );
+    }
+    return NextResponse.json({ ok: true, id: order.id, paymentPageUrl: result.paymentPageUrl });
+  } catch (err) {
+    console.error("[portal/siparis] iyzico hatası:", err);
+    return NextResponse.json({ error: "Ödeme sağlayıcısına ulaşılamadı" }, { status: 502 });
+  }
 }
 
 // Kanban / admin durum güncellemesi
