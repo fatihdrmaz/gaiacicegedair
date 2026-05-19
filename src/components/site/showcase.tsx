@@ -143,7 +143,15 @@ export function Testimonials() {
 }
 
 export function PressLogos() {
-  const logos = ['Regnum', 'Maxx Royal', 'Akbank', 'TAV', 'Garanti BBVA', 'Limak Hotels', 'Kempinski', 'Koton'];
+  const logos = [
+    'Mimar Sinan Üniversitesi',
+    'Armada Otel',
+    'Kent Üniversitesi',
+    'Notre Dame de Sion Fransız Lisesi',
+    'Dersaadet Restaurant',
+    'Casa Kilyos',
+    'Galata Olympos Restoran',
+  ];
   return (
     <section style={{ padding: '60px 0', background: 'var(--paper)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
       <div className="container">
