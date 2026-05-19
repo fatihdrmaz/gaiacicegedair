@@ -1,69 +1,31 @@
-// GAIA · ÇİÇEĞE DAİR logo — text-based, uses display font
+// GAIA · ÇİÇEĞE DAİR logo — görsel tabanlı
 
 export function GaiaLogo({
   size = 52,
   color,
-  stacked = true,
-  tagline = true,
 }: {
   size?: number;
   color?: string;
   stacked?: boolean;
   tagline?: boolean;
 }) {
-  const c = color || 'var(--accent)';
-  if (!stacked) {
-    return (
-      <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 12, color: c, fontFamily: 'var(--font-display)' }}>
-        <span style={{ fontSize: size, letterSpacing: '0.08em', fontWeight: 400, lineHeight: 1 }}>GAIA</span>
-        {tagline && (
-          <span
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: size * 0.22,
-              letterSpacing: '0.32em',
-              textTransform: 'uppercase',
-              opacity: 0.85,
-              fontWeight: 400,
-            }}
-          >
-            Çiçeğe Dair
-          </span>
-        )}
-      </div>
-    );
-  }
+  // color verildiyse (footer / portal gibi koyu zeminler) logo beyaza çevrilir
+  const onDark = Boolean(color);
   return (
-    <div
+    <img
+      src="/logo.png"
+      alt="GAIA Çiçeğe Dair"
       style={{
-        display: 'inline-flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        color: c,
-        fontFamily: 'var(--font-display)',
-        lineHeight: 1,
+        height: size * 1.2,
+        width: 'auto',
+        display: 'block',
+        filter: onDark ? 'brightness(0) invert(1)' : 'none',
       }}
-    >
-      <span style={{ fontSize: size, letterSpacing: '0.12em', fontWeight: 400, lineHeight: 0.95 }}>GAIA</span>
-      {tagline && (
-        <span
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: size * 0.18,
-            letterSpacing: '0.42em',
-            textTransform: 'uppercase',
-            marginTop: size * 0.14,
-            fontWeight: 400,
-          }}
-        >
-          Çiçeğe Dair
-        </span>
-      )}
-    </div>
+    />
   );
 }
 
-// Small flower mark used as favicon-style accent
+// Küçük çiçek işareti (favicon vurgusu olarak)
 export function GaiaMark({ size = 24, color = 'currentColor' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke={color} strokeWidth="1.1" strokeLinecap="round">
