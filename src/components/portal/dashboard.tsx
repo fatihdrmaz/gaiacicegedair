@@ -335,9 +335,9 @@ export function MonthView({ cursor, items }: { cursor: Date; items: any[] }) {
                   {c.items.slice(0, 3).map((it: any, j: number) => {
                     const col = EVENT_COLORS[it.type] || EVENT_COLORS.gift;
                     return (
-                      <div key={j} onClick={() => it._src === 'order' && router.push('/portal/siparisler/' + it.id)} style={{
+                      <div key={j} onClick={() => { if (it._src === 'order') router.push('/portal/siparisler/' + it.id); else if (it._src === 'b2c') router.push('/admin/ozel-gunler'); }} style={{
                         padding: '3px 6px', borderRadius: 3, fontSize: 11, lineHeight: 1.3,
-                        background: col.bg, color: col.fg, cursor: it._src === 'order' ? 'pointer' : 'default',
+                        background: col.bg, color: col.fg, cursor: it._src === 'order' || it._src === 'b2c' ? 'pointer' : 'default',
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>
                         {it.title}
@@ -436,9 +436,9 @@ export function WeekView({ cursor, items }: { cursor: Date; items: any[] }) {
                 {its.map((it: any, j: number) => {
                   const col = EVENT_COLORS[it.type] || EVENT_COLORS.gift;
                   return (
-                    <div key={j} onClick={() => it._src === 'order' && router.push('/portal/siparisler/' + it.id)} style={{
+                    <div key={j} onClick={() => { if (it._src === 'order') router.push('/portal/siparisler/' + it.id); else if (it._src === 'b2c') router.push('/admin/ozel-gunler'); }} style={{
                       padding: 8, borderRadius: 4, background: col.bg, color: col.fg,
-                      fontSize: 12, cursor: it._src === 'order' ? 'pointer' : 'default',
+                      fontSize: 12, cursor: it._src === 'order' || it._src === 'b2c' ? 'pointer' : 'default',
                     }}>
                       <div style={{ fontWeight: 500 }}>{it.title}</div>
                       {it.addr && <div style={{ fontSize: 10.5, opacity: 0.8, marginTop: 2 }}>{it.addr}</div>}

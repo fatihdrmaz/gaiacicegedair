@@ -20,6 +20,7 @@ const createSchema = z.object({
   palette: z.string().optional().default(""),
   concept: z.string().optional().default(""),
   note: z.string().optional().default(""),
+  recipientPhone: z.string().optional().default(""),
   amount: z.number().optional().default(0),
 });
 
@@ -84,7 +85,10 @@ export async function POST(req: Request) {
       created_by: user.id,
       template: d.template,
       recipient_name: d.recipient,
+      recipient_phone: d.recipientPhone || null,
       address_id: d.addrId || null,
+      address_text: d.addr || null,
+      city: d.city || null,
       delivery_date: d.date,
       delivery_time: d.time || "10:00",
       concept: d.concept || null,

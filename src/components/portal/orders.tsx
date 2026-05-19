@@ -109,7 +109,7 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
   const [data, setData] = useState<any>({
     template: null,
     type: '',
-    recipient: '', addrId: '', addr: '', city: 'İstanbul',
+    recipient: '', phone: '', addrId: '', addr: '', city: 'İstanbul',
     date: '', time: '10:00',
     palette: 'cream', concept: '',
     note: '', brandedCard: true,
@@ -140,6 +140,7 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
           palette: data.palette,
           concept: data.concept,
           note: data.note,
+          recipientPhone: data.phone,
           amount: Number(data.amount) || 0,
         }),
       });
@@ -257,7 +258,7 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
               <PortalSelect label="Şehir" value={data.city} onChange={e => update('city', e.target.value)} options={['İstanbul', 'Ankara', 'İzmir', 'Antalya', 'Bursa']} />
               <PortalInput label="Teslim Tarihi" type="date" required min={new Date().toISOString().slice(0, 10)} value={data.date} onChange={e => update('date', e.target.value)} />
               <PortalInput label="Teslim Saati" type="time" value={data.time} onChange={e => update('time', e.target.value)} />
-              <PortalInput label="İletişim Telefonu" placeholder="+90 5xx xxx xx xx" />
+              <PortalInput label="İletişim Telefonu" placeholder="+90 5xx xxx xx xx" value={data.phone} onChange={e => update('phone', e.target.value)} />
             </div>
 
             <label style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 12, padding: 16, background: 'var(--paper-warm)', borderRadius: 8, cursor: 'pointer' }}>
@@ -480,10 +481,13 @@ export function PortalOrderDetail({ orderId, state }: { orderId: string; state: 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <DetailLine label="Şablon" value={o.template} />
               <DetailLine label="Alıcı" value={o.recipient} />
-              <DetailLine label="Adres" value={o.addr} />
-              <DetailLine label="Teslim" value={fmtDate(o.date)} />
+              {o.phone && <DetailLine label="İletişim Telefonu" value={o.phone} />}
+              <DetailLine label="Adres" value={[o.addr, o.city].filter(Boolean).join(', ') || '—'} />
+              <DetailLine label="Teslim" value={`${fmtDate(o.date)}`} />
               <DetailLine label="Tutar" value={fmtTL(o.amount)} />
-              {o.notes && <DetailLine label="Notlar" value={`"${o.notes}"`} />}
+              {o.palette && <DetailLine label="Renk Paleti" value={o.palette} />}
+              {o.concept && <DetailLine label="Konsept / Özel İstek" value={o.concept} />}
+              {o.note && <DetailLine label="Kart Notu" value={`"${o.note}"`} />}
             </div>
           </PortalCard>
         </div>

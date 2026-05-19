@@ -48,6 +48,9 @@ type CorporateOrderRow = {
   created_by: string | null;
   template: string | null;
   recipient_name: string | null;
+  recipient_phone: string | null;
+  address_text: string | null;
+  city: string | null;
   delivery_date: string | null;
   concept: string | null;
   palette: string | null;
@@ -60,9 +63,18 @@ type CorporateOrderRow = {
   company_addresses?: { label: string | null; address: string | null; city: string | null } | null;
 };
 
+const PALETTE_LABELS: Record<string, string> = {
+  cream: "Krem & Beyaz",
+  pastel: "Pastel Pembe",
+  sage: "Yeşil & Beyaz",
+  autumn: "Toprak & Bordo",
+  brand: "Marka Renkleri",
+};
+
 export function mapOrder(row: CorporateOrderRow): PortalOrder {
   const tpl = row.template || "custom";
   const addr =
+    row.address_text ||
     row.company_addresses?.address ||
     row.company_addresses?.label ||
     "—";
@@ -77,6 +89,11 @@ export function mapOrder(row: CorporateOrderRow): PortalOrder {
     status: mapStatus(row.status),
     template: TEMPLATE_LABELS[tpl] || tpl,
     notes: row.note || row.concept || "",
+    palette: row.palette ? PALETTE_LABELS[row.palette] || row.palette : "",
+    concept: row.concept || "",
+    note: row.note || "",
+    phone: row.recipient_phone || "",
+    city: row.city || row.company_addresses?.city || "",
     createdBy: row.created_by || "—",
     createdAt: (row.created_at || "").slice(0, 10),
     photos: row.tracking_photos || [],

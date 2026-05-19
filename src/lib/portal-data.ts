@@ -11,6 +11,11 @@ export type PortalOrder = {
   status: 'pending' | 'approved' | 'production' | 'shipping' | 'delivered' | 'rejected' | 'draft';
   template: string;
   notes: string;
+  palette?: string;
+  concept?: string;
+  note?: string;
+  phone?: string;
+  city?: string;
   createdBy: string;
   createdAt: string;
   photos: string[];
