@@ -260,11 +260,16 @@ export function B2CStep4({ days, total, onBack, onConfirm }: { days: Day[]; tota
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [buyer, setBuyer] = useState({ name: '', email: '', phone: '' });
+  const [agreed, setAgreed] = useState(false);
   const upB = (k: string, v: string) => setBuyer(b => ({ ...b, [k]: v }));
 
   const submit = async () => {
     if (!buyer.name.trim() || !buyer.email.trim() || !buyer.phone.trim()) {
       setError('Lütfen ad, e-posta ve telefon bilgilerinizi girin.');
+      return;
+    }
+    if (!agreed) {
+      setError('Devam etmek için Mesafeli Satış Sözleşmesi ve Ön Bilgilendirme Formu\'nu kabul etmeniz gerekir.');
       return;
     }
     setSubmitting(true);
@@ -349,7 +354,21 @@ export function B2CStep4({ days, total, onBack, onConfirm }: { days: Day[]; tota
               <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Sadakat İndirimi</span><span>— Ücretsiz</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Kargo</span><span>Dahil</span></div>
             </div>
-            <Button variant="white" size="lg" onClick={submit} disabled={submitting} style={{ marginTop: 24, width: '100%', justifyContent: 'center' }} iconRight={<Icons.Arrow size={14} />}>
+            <label style={{ marginTop: 20, display: 'flex', gap: 10, fontSize: 12.5, lineHeight: 1.55, opacity: 0.95, cursor: 'pointer', alignItems: 'flex-start' }}>
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={e => setAgreed(e.target.checked)}
+                style={{ marginTop: 2, accentColor: '#fff', flexShrink: 0, cursor: 'pointer' }}
+              />
+              <span>
+                <a href="/mesafeli-satis-sozlesmesi" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'underline' }}>Mesafeli Satış Sözleşmesi</a>
+                {' ve '}
+                <a href="/teslimat-iade" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'underline' }}>Teslimat &amp; İade Koşulları</a>
+                {'\''}nı okudum, kabul ediyorum.
+              </span>
+            </label>
+            <Button variant="white" size="lg" onClick={submit} disabled={submitting || !agreed} style={{ marginTop: 16, width: '100%', justifyContent: 'center', opacity: agreed ? 1 : 0.6 }} iconRight={<Icons.Arrow size={14} />}>
               {submitting ? 'İşleniyor…' : 'Ödemeyi Tamamla'}
             </Button>
             {error && (

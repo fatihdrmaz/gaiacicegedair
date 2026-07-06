@@ -120,6 +120,7 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [products, setProducts] = useState<{ id: string; name: string; description: string; price: number }[] | null>(null);
+  const [agreed, setAgreed] = useState(false);
   const update = (k: string, v: any) => setData((d: any) => ({ ...d, [k]: v }));
 
   useEffect(() => {
@@ -130,6 +131,10 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
   }, []);
 
   const submitOrder = async () => {
+    if (!agreed) {
+      setError('Devam etmek için Mesafeli Satış Sözleşmesi\'ni kabul etmeniz gerekir.');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -348,11 +353,27 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
                 {data.note && <ReviewRow label="Kart Notu" value={`"${data.note}"`} />}
               </div>
 
-              <PortalCard padding={20} style={{ background: 'var(--accent)', color: '#fff', height: 'fit-content' }}>
-                <div className="overline" style={{ color: 'rgba(255,255,255,0.8)' }}>Tutar</div>
-                <div className="serif" style={{ fontSize: 42, marginTop: 8, lineHeight: 1 }}>{fmtTL(Number(data.amount) || 0)}</div>
-                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>KDV dahil · kredi kartı ile ödenir</div>
-              </PortalCard>
+              <div>
+                <PortalCard padding={20} style={{ background: 'var(--accent)', color: '#fff', height: 'fit-content' }}>
+                  <div className="overline" style={{ color: 'rgba(255,255,255,0.8)' }}>Tutar</div>
+                  <div className="serif" style={{ fontSize: 42, marginTop: 8, lineHeight: 1 }}>{fmtTL(Number(data.amount) || 0)}</div>
+                  <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>KDV dahil · kredi kartı ile ödenir</div>
+                </PortalCard>
+                <label style={{ marginTop: 16, display: 'flex', gap: 10, fontSize: 12.5, lineHeight: 1.55, color: 'var(--ink-60)', cursor: 'pointer', alignItems: 'flex-start' }}>
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={e => setAgreed(e.target.checked)}
+                    style={{ marginTop: 2, accentColor: 'var(--accent)', flexShrink: 0, cursor: 'pointer' }}
+                  />
+                  <span>
+                    <a href="/mesafeli-satis-sozlesmesi" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>Mesafeli Satış Sözleşmesi</a>
+                    {' ve '}
+                    <a href="/teslimat-iade" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>Teslimat &amp; İade Koşulları</a>
+                    {'\''}nı okudum, kabul ediyorum.
+                  </span>
+                </label>
+              </div>
             </div>
           </>
         )}
@@ -361,7 +382,7 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
           {step > 0 ? <PortalButton variant="ghost" onClick={() => setStep(step - 1)} icon={<Icons.ArrowLeft size={14} />}>Geri</PortalButton> : <PortalButton variant="ghost" onClick={() => router.push('/portal/dashboard')}>İptal</PortalButton>}
           {step < 3
             ? <PortalButton variant="primary" onClick={() => setStep(step + 1)} iconRight={<Icons.Arrow size={14} />} disabled={step === 0 && !data.productId}>Devam</PortalButton>
-            : <PortalButton variant="primary" size="lg" onClick={submitOrder} iconRight={<Icons.Arrow size={14} />} disabled={submitting}>{submitting ? 'İşleniyor…' : 'Ödemeye Geç'}</PortalButton>}
+            : <PortalButton variant="primary" size="lg" onClick={submitOrder} iconRight={<Icons.Arrow size={14} />} disabled={submitting || !agreed} style={{ opacity: agreed ? 1 : 0.6 }}>{submitting ? 'İşleniyor…' : 'Ödemeye Geç'}</PortalButton>}
         </div>
         {error && (
           <div style={{ marginTop: 16, padding: '10px 14px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 13 }}>{error}</div>

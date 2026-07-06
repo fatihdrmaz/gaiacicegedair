@@ -22,6 +22,20 @@ const cols: Col[] = [
   ]},
 ];
 
+function PaymentLogos() {
+  const chip: import('react').CSSProperties = {
+    background: '#fff', borderRadius: 4, padding: '6px 12px',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 32,
+  };
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <img src="/payment/iyzico.svg" alt="iyzico ile Öde" style={{ height: 30, opacity: 0.95 }} />
+      <span style={chip}><img src="/payment/visa.svg" alt="Visa" style={{ height: 18, display: 'block' }} /></span>
+      <span style={chip}><img src="/payment/mastercard.svg" alt="MasterCard" style={{ height: 24, display: 'block' }} /></span>
+    </div>
+  );
+}
+
 export function Footer({ onQuote }: { onQuote?: () => void }) {
   return (
     <footer style={{ background: 'var(--accent-deep)', color: 'var(--paper)', paddingTop: 90, paddingBottom: 30 }}>
@@ -66,16 +80,31 @@ export function Footer({ onQuote }: { onQuote?: () => void }) {
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 70, paddingTop: 30, borderTop: '1px solid rgba(255,255,255,0.15)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20, fontSize: 12, opacity: 0.7, letterSpacing: '0.1em' }}>
+        <div style={{ marginTop: 60, paddingTop: 30, borderTop: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }} className="footer-payment">
+          <div>
+            <div className="overline" style={{ marginBottom: 10, opacity: 0.7, fontSize: 11 }}>Güvenli Ödeme</div>
+            <PaymentLogos />
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.55, textAlign: 'right', maxWidth: 360 }}>
+            Kredi kartı ödemeleriniz iyzico altyapısı üzerinden 256-bit SSL ile şifrelenerek alınır. Kart bilgileriniz sitemizde saklanmaz.
+          </div>
+        </div>
+        <div style={{ marginTop: 30, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.15)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20, fontSize: 12, opacity: 0.7, letterSpacing: '0.08em' }}>
           <div>© 2026 GAIA Çiçeğe Dair · Tüm Hakları Saklıdır</div>
-          <div style={{ display: 'flex', gap: 24 }}>
+          <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}>
             <Link href="/gizlilik" style={{ color: 'inherit', textDecoration: 'none' }}>Gizlilik</Link>
             <Link href="/kvkk" style={{ color: 'inherit', textDecoration: 'none' }}>KVKK</Link>
             <Link href="/cerez-politikasi" style={{ color: 'inherit', textDecoration: 'none' }}>Çerezler</Link>
+            <Link href="/mesafeli-satis-sozlesmesi" style={{ color: 'inherit', textDecoration: 'none' }}>Mesafeli Satış Sözleşmesi</Link>
+            <Link href="/teslimat-iade" style={{ color: 'inherit', textDecoration: 'none' }}>Teslimat ve İade</Link>
           </div>
         </div>
       </div>
-      <style>{`@media (max-width: 860px){ .footer-grid { grid-template-columns: 1fr 1fr !important; } } @media (max-width: 520px){ .footer-grid { grid-template-columns: 1fr !important; } }`}</style>
+      <style>{`
+        @media (max-width: 860px){ .footer-grid { grid-template-columns: 1fr 1fr !important; } }
+        @media (max-width: 520px){ .footer-grid { grid-template-columns: 1fr !important; } }
+        @media (max-width: 700px){ .footer-payment { flex-direction: column; align-items: flex-start !important; } .footer-payment > div:last-child { text-align: left !important; } }
+      `}</style>
     </footer>
   );
 }
