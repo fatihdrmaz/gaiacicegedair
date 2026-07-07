@@ -17,9 +17,9 @@ export default function MesafeliSatisPage() {
       <LegalText><strong>Satıcı:</strong></LegalText>
       <LegalList items={[
         'Ünvan: GAIA Çiçeğe Dair',
-        'Adres: Gümüşsuyu Mah. Mebusan Yokuşu No: 6/B, Beyoğlu/İstanbul',
-        'E-posta: info@cicegedair.com',
-        'Telefon: +90 531 212 32 67',
+        'Adres: Gümüşsuyu Mah. Mebusan Yokuşu No: 26/B, Beyoğlu/İstanbul',
+        'E-posta: info@gaiacicegedair.com',
+        'Telefon: +90 531 651 32 67',
       ]} />
       <LegalText>
         <strong>Alıcı:</strong> Sipariş sırasında adı, adresi ve iletişim bilgileri kayıt altına alınan;
@@ -72,7 +72,7 @@ export default function MesafeliSatisPage() {
       ]} />
       <LegalText>
         Bu kapsam dışındaki ürünler için alıcı, teslim tarihinden itibaren 14 gün içinde
-        info@cicegedair.com adresine bildirimde bulunarak cayma hakkını kullanabilir. Cayma
+        info@gaiacicegedair.com adresine bildirimde bulunarak cayma hakkını kullanabilir. Cayma
         hakkı kullanıldığında ürün, orijinal ambalajı bozulmamış olarak satıcıya iade edilir;
         onaylanan iade tutarı 14 gün içinde alıcının hesabına geçer.
       </LegalText>

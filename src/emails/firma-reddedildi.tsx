@@ -53,7 +53,7 @@ export function FirmaReddedildiEmail({
           ) : null}
           <Hr />
           <Text style={{ color: "#4a4a44", fontSize: "14px" }}>
-            Sorularınız için bilgi@cicegedair.com adresinden bize
+            Sorularınız için bilgi@gaiacicegedair.com adresinden bize
             ulaşabilirsiniz.
           </Text>
         </Container>

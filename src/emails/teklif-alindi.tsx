@@ -77,7 +77,7 @@ export function TeklifAlindiEmail({ data }: { data: TeklifData }) {
           <Hr />
           <Text style={{ color: "#4a4a44", fontSize: "14px" }}>
             Acil durumlar için bize WhatsApp üzerinden ulaşabilirsiniz:{" "}
-            <Link href="https://wa.me/905312123267" style={{ color: "#5a6b4d" }}>
+            <Link href="https://wa.me/905316513267" style={{ color: "#5a6b4d" }}>
               WhatsApp ile yaz
             </Link>
           </Text>

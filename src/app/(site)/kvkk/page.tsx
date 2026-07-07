@@ -19,9 +19,9 @@ export default function KvkkPage() {
         aşağıda açıklanan kapsamda işlenmektedir.
       </LegalText>
       <LegalList items={[
-        'Adres: Gümüşsuyu Mah. Mebusan Yokuşu No: 6/B, Beyoğlu/İstanbul',
-        'E-posta: info@cicegedair.com',
-        'Telefon: +90 531 212 32 67',
+        'Adres: Gümüşsuyu Mah. Mebusan Yokuşu No: 26/B, Beyoğlu/İstanbul',
+        'E-posta: info@gaiacicegedair.com',
+        'Telefon: +90 531 651 32 67',
       ]} />
 
       <LegalHeading>2. İşlenen Kişisel Veriler</LegalHeading>
@@ -64,7 +64,7 @@ export default function KvkkPage() {
 
       <LegalHeading>7. Başvuru</LegalHeading>
       <LegalText>
-        Haklarınıza ilişkin taleplerinizi info@cicegedair.com adresine ya da
+        Haklarınıza ilişkin taleplerinizi info@gaiacicegedair.com adresine ya da
         yukarıdaki posta adresine yazılı olarak iletebilirsiniz. Talepler en geç
         30 gün içinde sonuçlandırılır.
       </LegalText>

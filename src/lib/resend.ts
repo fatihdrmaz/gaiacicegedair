@@ -6,9 +6,9 @@ const apiKey = process.env.RESEND_API_KEY;
 export const resend = apiKey ? new Resend(apiKey) : null;
 
 export const MAIL_FROM =
-  process.env.MAIL_FROM || "GAIA Çiçeğe Dair <bilgi@cicegedair.com>";
+  process.env.MAIL_FROM || "GAIA Çiçeğe Dair <bilgi@gaiacicegedair.com>";
 export const GAIA_NOTIFY_EMAIL =
-  process.env.GAIA_NOTIFY_EMAIL || "bilgi@cicegedair.com";
+  process.env.GAIA_NOTIFY_EMAIL || "bilgi@gaiacicegedair.com";
 
 type SendArgs = {
   to: string | string[];

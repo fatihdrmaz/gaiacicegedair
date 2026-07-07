@@ -167,7 +167,7 @@ export async function POST(req: Request) {
         id: company.id,
         name: (company.contact_name || "GAIA").split(" ")[0] || "GAIA",
         surname: (company.contact_name || "Müşteri").split(" ").slice(1).join(" ") || "Müşteri",
-        email: company.email || "siparis@cicegedair.com",
+        email: company.email || "siparis@gaiacicegedair.com",
         phone: company.phone || "+905555555555",
         address: `${d.addr || ""} ${d.city || "İstanbul"}`.trim(),
         city: d.city || "İstanbul",

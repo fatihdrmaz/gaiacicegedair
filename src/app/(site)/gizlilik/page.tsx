@@ -56,15 +56,15 @@ export default function GizlilikPage() {
       <LegalHeading>Haklarınız</LegalHeading>
       <LegalText>
         Verilerinize erişme, düzeltme veya silinmesini talep etme haklarınızı
-        kullanmak için info@cicegedair.com adresinden bize ulaşabilirsiniz.
+        kullanmak için info@gaiacicegedair.com adresinden bize ulaşabilirsiniz.
         Detaylar için <a href="/kvkk" style={{ color: 'var(--accent)' }}>KVKK Aydınlatma Metni</a> sayfamıza bakabilirsiniz.
       </LegalText>
 
       <LegalHeading>İletişim</LegalHeading>
       <LegalList items={[
-        'E-posta: info@cicegedair.com',
-        'Telefon: +90 531 212 32 67',
-        'Adres: Gümüşsuyu Mah. Mebusan Yokuşu No: 6/B, Beyoğlu/İstanbul',
+        'E-posta: info@gaiacicegedair.com',
+        'Telefon: +90 531 651 32 67',
+        'Adres: Gümüşsuyu Mah. Mebusan Yokuşu No: 26/B, Beyoğlu/İstanbul',
       ]} />
 
       <LegalText>

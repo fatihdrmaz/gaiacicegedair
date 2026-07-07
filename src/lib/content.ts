@@ -214,7 +214,7 @@ export const SERVICE_DETAILS: Record<string, any> = {
   'karsilama-buketi': {
     key: 'karsilama-buketi',
     title: 'Karşılama Buketi & VIP Misafir Karşılama',
-    tagline: 'İzlenim değil, etki bırakmak isteyenlere.',
+    tagline: 'Anlık bir izlenim değil, kalıcı bir his bırakmak isteyenlere.',
     summary:
       'Yurt dışından gelen VIP misafirler, önemli iş ortakları ya da özel davetliler için — havaalanında ya da otel lobisinde uzatılan, kurumunuzun imzasını taşıyan karşılama buketleri ve karşılama hizmeti.',
     photo: 'cWelcome',
@@ -250,7 +250,7 @@ export const SERVICE_DETAILS: Record<string, any> = {
   'lobi-aranjmani': {
     key: 'lobi-aranjmani',
     title: 'Lobi & Ortak Alan Aranjmanları',
-    tagline: 'Çiçek varsa, alan yaşayan bir şeydir.',
+    tagline: 'Çiçek varsa, mekân yaşayan bir ruha dönüşür.',
     summary:
       'Otelinizin ya da şirketinizin giriş alanında yer alan çiçek, ilk dikkat çeken detaydır. Haftalık taze çiçek rotasyonları ya da kalıcı kuru aranjmanlarla mekâna ruh katarız.',
     photo: 'cLobby',
@@ -460,7 +460,7 @@ export const PRODUCTS: any[] = [
     title: 'Orkideler',
     photo: 'pOrchid',
     tagline: 'Zarafetin sessiz dili.',
-    desc: 'Beyaz, mor, pembe orkideler — özel seramik saksılarda. 2–3 ay çiçek açar.',
+    desc: 'Beyaz, mor, pembe orkideler — özel seramik saksılarda; zarafetin uzun soluklu hâli.',
     bullets: ['Tek / çift / çoklu dal', 'Premium seramik saksı', 'Bakım kartı', 'Aile, iş ve özel günler için ideal'],
   },
   {
@@ -502,7 +502,7 @@ export const SERVICE_CATEGORIES: Record<string, any> = {
     label: 'Çiçek & Hediye',
     sublabel: 'Bireysel · Özel Günlerim ile gönderilir',
     intro:
-      'Bu ürünleri online sipariş edemezsiniz. Sevdiklerinizin özel günlerinde göndermek için Özel Günlerim akışını kullanın — yıllık takviminizi bir kerede planlayın, biz onların adına gönderelim.',
+      'Bu koleksiyon, sevdiklerinizin özel anlarına eşlik etmek için tasarlandı. Özel Günlerim akışıyla yıllık çiçek takviminizi bir kez oluşturun; zamanı geldiğinde biz sizin adınıza gönderelim.',
     products: ['buketler', 'aranjmanlar', 'saksi-bitkileri', 'orkideler', 'celenk'],
   },
 };

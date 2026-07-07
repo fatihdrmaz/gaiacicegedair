@@ -177,13 +177,13 @@ export function ProductsCTA() {
       display: 'grid', gridTemplateColumns: '1fr auto', gap: 30, alignItems: 'center',
     }} className="products-cta">
       <div>
-        <div className="overline" style={{ color: 'var(--accent-soft)', marginBottom: 12 }}>Önemli not</div>
+        <div className="overline" style={{ color: 'var(--accent-soft)', marginBottom: 12 }}>GAIA Hatırlasın</div>
         <h3 className="serif" style={{ fontSize: 28, fontWeight: 400, lineHeight: 1.2 }}>
-          Bu ürünleri online sipariş edemezsiniz.
+          Bu koleksiyon, sevdiklerinizin özel anlarına eşlik etmek için tasarlandı.
         </h3>
         <p style={{ marginTop: 12, fontSize: 15, opacity: 0.85, lineHeight: 1.6, maxWidth: 580 }}>
-          Sevdiklerinizin özel günlerinde göndermek için <strong>Özel Günlerim</strong> akışını kullanın.
-          Yıllık takviminizi bir kerede planlayın, biz onların adına zamanında gönderelim.
+          <strong>Özel Günlerim</strong> akışıyla yıllık çiçek takviminizi bir kez oluşturun;
+          zamanı geldiğinde biz sizin adınıza gönderelim.
         </p>
       </div>
       <Link href="/ozel-gunlerim" style={{ textDecoration: 'none' }}>

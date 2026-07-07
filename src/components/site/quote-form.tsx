@@ -10,7 +10,7 @@ export function QuoteForm({ open, onClose, preset }: { open: boolean; onClose: (
   const [data, setData] = useState<any>({
     firma: '', ad: '', tel: '', email: '',
     tip: preset || 'Düğün Organizasyonu', konsept: '',
-    kisi: '', tarih: '', mekan: '', butce: '5.000 – 15.000 ₺',
+    kisi: '', tarih: '', mekan: '', butce: '0 – 50.000 ₺',
     notlar: '', files: [] as string[],
   });
   const [sent, setSent] = useState(false);
@@ -27,7 +27,7 @@ export function QuoteForm({ open, onClose, preset }: { open: boolean; onClose: (
   if (!open) return null;
 
   const types = ['Düğün Organizasyonu', 'Kurumsal Organizasyon', 'Doğum Günü', 'Mekan Süsleme', 'Tekne Süsleme', 'Lobi Düzenleme', 'Karşılama Buketi', 'Kurumsal Hediye', 'Çelenk', 'Kurutulmuş Promosyon'];
-  const butceler = ['2.500 – 5.000 ₺', '5.000 – 15.000 ₺', '15.000 – 40.000 ₺', '40.000 – 100.000 ₺', '100.000 ₺+', 'Size Özel'];
+  const butceler = ['0 – 50.000 ₺', '50.000 – 150.000 ₺', '150.000 – 400.000 ₺', '400.000 ₺+', 'Size Özel'];
 
   const update = (k: string, v: any) => setData((d: any) => ({ ...d, [k]: v }));
 
@@ -119,7 +119,7 @@ export function QuoteForm({ open, onClose, preset }: { open: boolean; onClose: (
               </div>
               <div className="serif" style={{ fontSize: 32, marginTop: 24 }}>Teklifinizi aldık</div>
               <p style={{ color: 'var(--ink-60)', marginTop: 10, maxWidth: 420, margin: '10px auto 0', lineHeight: 1.6 }}>
-                Ekibimiz 24 saat içinde size özel bir teklifle dönecek. Sabırsızlıkla çalışıyoruz — güzel bir şey doğacak.
+                Ekibimiz 24 saat içinde size özel bir teklifle dönecek. Sizin için özenle çalışıyoruz — güzel bir şey doğacak.
               </p>
               <Button variant="primary" onClick={onClose} style={{ marginTop: 32 }}>Tamam</Button>
             </div>

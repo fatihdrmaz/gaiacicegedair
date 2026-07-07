@@ -2,7 +2,7 @@
 
 import { Icons } from '@/components/shared/icons';
 
-const WHATSAPP_URL = 'https://wa.me/905312123267';
+const WHATSAPP_URL = 'https://wa.me/905316513267';
 
 export function WhatsappFab() {
   const Icon = (Icons as any).Whatsapp;

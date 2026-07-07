@@ -39,7 +39,7 @@ export function Showcase() {
     <section style={{ padding: '120px 0', background: 'var(--paper-warm)' }}>
       <div className="container">
         <SectionTitle
-          eyebrow="Son Yaptıklarımız"
+          eyebrow="GAIA'dan Son Dokunuşlar"
           title={<>Atölyeden <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>kareler.</em></>}
           subtitle="Gerçek etkinlikler, gerçek mekânlar — her projede tek tek tasarlanan konseptler."
         />
@@ -156,7 +156,7 @@ export function PressLogos() {
     <section style={{ padding: '60px 0', background: 'var(--paper)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
       <div className="container">
         <div style={{ display: 'flex', alignItems: 'center', gap: 40, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <span className="overline" style={{ color: 'var(--ink-40)' }}>Güvenilen Markalar</span>
+          <span className="overline" style={{ color: 'var(--ink-40)' }}>Kurumsal İşbirliklerimiz</span>
           {logos.map(l => (
             <span key={l} className="serif" style={{ fontSize: 22, color: 'var(--ink-40)', opacity: 0.75, fontStyle: l.length > 7 ? 'italic' : 'normal' }}>{l}</span>
           ))}
@@ -168,15 +168,15 @@ export function PressLogos() {
 
 export function Process() {
   const steps = [
-    { n: '01', title: 'Dinliyoruz', desc: 'Hikâyenizi, mekânınızı ve hayalinizi dikkatle dinliyoruz.' },
-    { n: '02', title: 'Tasarlıyoruz', desc: 'Size özel konsept ve moodboard’u birlikte şekillendiriyoruz.' },
-    { n: '03', title: 'Uyguluyoruz', desc: 'Atölyeden mekâna; her detayı zamanında ve özenle hayata geçiriyoruz.' },
-    { n: '04', title: 'Anılarınızda oluyoruz', desc: 'Bir kare, kurutulmuş bir demet ya da gelecek yıl bir sürprizle yanınızdayız.' },
+    { n: '01', title: 'Tanıyoruz', desc: 'Hikâyenizi, mekânınızı ve hayalinizi dikkatle dinliyoruz.' },
+    { n: '02', title: 'Kişiselleştiriyoruz', desc: 'Size özel konsept ve ilham tablosunu birlikte şekillendiriyoruz.' },
+    { n: '03', title: 'Gerçekleştiriyoruz', desc: 'Atölyeden mekâna; her detayı zamanında ve özenle hayata geçiriyoruz.' },
+    { n: '04', title: 'Eşlik ediyoruz', desc: 'Bir kare, kurutulmuş bir demet ya da gelecek yıl bir sürprizle yanınızdayız.' },
   ];
   return (
     <section style={{ padding: '120px 0', background: 'var(--paper)' }}>
       <div className="container">
-        <SectionTitle eyebrow="Süreç" title={<>Tasarım gibi <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>çiçek.</em></>} />
+        <SectionTitle eyebrow="Süreç" title={<>Bir çiçekten <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>fazlası…</em></>} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 40, marginTop: 70 }}>
           {steps.map((st, i) => (
             <Reveal key={i} delay={i * 0.1}>
@@ -197,17 +197,17 @@ export function CTAStrip({ onQuote, onB2C }: { onQuote?: () => void; onB2C?: () 
   return (
     <section style={{ padding: '120px 0', color: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
       <img
-        src="https://images.unsplash.com/photo-1608935387815-8963f8d5cf88?w=1900&q=80"
+        src="https://images.unsplash.com/photo-1519741497674-611481863552?w=1900&q=80"
         alt=""
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
       />
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(42,67,53,0.80), rgba(42,67,53,0.92))' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(42,67,53,0.72), rgba(42,67,53,0.90))' }} />
       <div className="container" style={{ position: 'relative', textAlign: 'center', maxWidth: 820 }}>
         <h2 className="serif" style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 400, letterSpacing: '-0.01em', lineHeight: 1.1 }}>
-          Hayalindeki günü <em style={{ fontStyle: 'italic' }}>çiçekle</em> yaz.
+          Hayalleriniz için <em style={{ fontStyle: 'italic' }}>kusursuz</em> bir atmosfer.
         </h2>
         <p style={{ marginTop: 22, fontSize: 17, opacity: 0.88, maxWidth: 540, margin: '22px auto 0' }}>
-          Kurumsal bir organizasyon mu, kişisel bir sürpriz mi — ne olursa olsun, ilham dinliyoruz.
+          Özel günlerden kurumsal ihtiyaçlara; çiçekleri hayatın her alanına taşıyan kişiye ve markaya özel çözümler sunuyoruz.
         </p>
         <div style={{ display: 'flex', gap: 14, marginTop: 44, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Button variant="white" size="lg" onClick={onQuote} iconRight={<Icons.Arrow size={14} />}>Teklif Al</Button>

@@ -16,9 +16,9 @@ export default function TeslimatIadePage() {
       <LegalHeading>1. Satıcı Bilgileri</LegalHeading>
       <LegalList items={[
         'Ünvan: GAIA Çiçeğe Dair',
-        'Adres: Gümüşsuyu Mah. Mebusan Yokuşu No: 6/B, Beyoğlu/İstanbul',
-        'E-posta: info@cicegedair.com',
-        'Telefon: +90 531 212 32 67',
+        'Adres: Gümüşsuyu Mah. Mebusan Yokuşu No: 26/B, Beyoğlu/İstanbul',
+        'E-posta: info@gaiacicegedair.com',
+        'Telefon: +90 531 651 32 67',
       ]} />
 
       <LegalHeading>2. Teslimat Bölgesi</LegalHeading>
@@ -70,7 +70,7 @@ export default function TeslimatIadePage() {
       <LegalText>
         Teslim aldığınız ürün taze olmayan çiçekler içeriyorsa, tasarım siparişte belirtilenden
         önemli ölçüde farklıysa veya nakliye sırasında hasar görmüşse, <strong>teslim tarihinden
-        itibaren 24 saat içinde</strong> info@cicegedair.com adresine ürün fotoğraflarıyla birlikte
+        itibaren 24 saat içinde</strong> info@gaiacicegedair.com adresine ürün fotoğraflarıyla birlikte
         bildirimde bulunmanız gerekir. Bildirim üzerine ürün ücretsiz olarak yenilenir ya da ödemenin
         tamamı iade edilir.
       </LegalText>
@@ -85,7 +85,7 @@ export default function TeslimatIadePage() {
       <LegalHeading>9. İletişim ve Şikayet</LegalHeading>
       <LegalText>
         Teslimat veya iade süreçlerine ilişkin her türlü soru, öneri ve şikayetiniz için
-        info@cicegedair.com adresi ya da +90 531 212 32 67 numaralı hattımız üzerinden bize
+        info@gaiacicegedair.com adresi ya da +90 531 651 32 67 numaralı hattımız üzerinden bize
         ulaşabilirsiniz. Talepleriniz en geç 3 iş günü içinde yanıtlanır.
       </LegalText>
 

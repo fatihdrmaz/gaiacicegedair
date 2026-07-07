@@ -39,7 +39,7 @@ export default function CerezPage() {
 
       <LegalHeading>İletişim</LegalHeading>
       <LegalText>
-        Çerez kullanımına ilişkin sorularınız için info@cicegedair.com
+        Çerez kullanımına ilişkin sorularınız için info@gaiacicegedair.com
         adresinden bize ulaşabilirsiniz. Kişisel verilerinizle ilgili
         detaylar için <a href="/kvkk" style={{ color: 'var(--accent)' }}>KVKK Aydınlatma Metni</a> sayfamıza bakabilirsiniz.
       </LegalText>

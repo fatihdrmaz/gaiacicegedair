@@ -6,10 +6,9 @@ import { Button, Field, Input, Select, TextArea } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
 
 export const PACKAGES = [
-  { id: 'mini',    name: 'Mini',    price: 450,  desc: 'Küçük, zarif bir buket · tek odak çiçek',  items: ['7-9 gövde taze çiçek', 'El sarımı', 'Kart & not', 'Standart teslimat'] },
-  { id: 'klasik',  name: 'Klasik',  price: 850,  desc: 'Klasik butik buket · mevsimin en iyisi',     items: ['15-20 gövde mevsim çiçeği', 'Kraft + saten sunum', 'Kart & kişisel not', 'Tercih edilen saate teslimat'] },
-  { id: 'premium', name: 'Premium', price: 1600, desc: 'Özel tasarım aranjman · sandığında servis',  items: ['Özel tasarım aranjman', 'Premium sunum kutusu', 'Kişisel mesaj kartı', 'Çiçek + çikolata / mum seçeneği', 'Dakikası takip edilebilir teslimat'] },
-  { id: 'luks',    name: 'Lüks',    price: 3200, desc: 'Unutulmaz bir sahne · özel konsept',          items: ['Özel konsept aranjman', 'Seramik / cam vazo hediyeli', 'Premium hediye setleri', 'Kişiye özel video kart', 'VIP randevulu teslimat'] },
+  { id: 'kucuk', name: 'Küçük', price: 750,  desc: 'Zarif ve anlamlı · günlük ölçekte butik buket',    items: ['10-12 gövde mevsim çiçeği', 'El sarımı, kraft & saten sunum', 'Kart ve kişisel not', 'İstanbul içi teslimat'] },
+  { id: 'orta',  name: 'Orta',  price: 1500, desc: 'Şık ve etkileyici · özenle hazırlanmış aranjman', items: ['20-25 gövde mevsim çiçeği', 'Premium sunum kutusu', 'Kişisel mesaj kartı', 'Çiçek + çikolata / mum seçeneği', 'Tercih edilen saate teslimat'] },
+  { id: 'buyuk', name: 'Büyük', price: 3000, desc: 'Etkileyici bir sahne · özel konsept aranjman',   items: ['Özel konsept & büyük ölçekli aranjman', 'Seramik / cam vazo hediyeli', 'Premium hediye seti', 'Kişiye özel video kart', 'VIP randevulu teslimat'] },
 ];
 
 export const OCCASIONS = [
@@ -31,7 +30,7 @@ type Day = {
 export function B2CPage() {
   const [step, setStep] = useState(0);
   const [days, setDays] = useState<Day[]>([
-    { id: 1, name: 'Eşimin Doğum Günü', date: '2026-05-16', occasion: 'Doğum Günü', recipient: '',  address: '', time: '10:00', note: '', concept: 'Romantik', package: 'klasik' },
+    { id: 1, name: 'Eşimin Doğum Günü', date: '2026-05-16', occasion: 'Doğum Günü', recipient: '',  address: '', time: '10:00', note: '', concept: 'Romantik', package: 'orta' },
   ]);
   const [confirmed, setConfirmed] = useState(false);
 
@@ -46,7 +45,7 @@ export function B2CPage() {
 
   const addDay = () => setDays(ds => [...ds, {
     id: Date.now(), name: '', date: '', occasion: 'Doğum Günü',
-    recipient: '', address: '', time: '10:00', note: '', concept: 'Klasik', package: 'klasik',
+    recipient: '', address: '', time: '10:00', note: '', concept: 'Klasik', package: 'orta',
   }]);
   const removeDay = (id: number) => setDays(ds => ds.filter(d => d.id !== id));
   const updateDay = (id: number, patch: Partial<Day>) => setDays(ds => ds.map(d => d.id === id ? { ...d, ...patch } : d));
@@ -116,9 +115,9 @@ export function B2CStep1({ days, addDay, removeDay, updateDay, onNext }: { days:
             <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icons.Calendar size={20} />
             </div>
-            <Field label="Günün Adı"><Input value={d.name} onChange={(e: any) => updateDay(d.id, { name: e.target.value })} placeholder="Örn: Annemin Doğum Günü" /></Field>
+            <Field label="Özel Günü Adlandırın"><Input value={d.name} onChange={(e: any) => updateDay(d.id, { name: e.target.value })} placeholder="Örn: Annemin Doğum Günü" /></Field>
             <Field label="Tarih"><Input type="date" min={new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10)} max={new Date(Date.now() + 367 * 86400000).toISOString().slice(0, 10)} value={d.date} onChange={(e: any) => updateDay(d.id, { date: e.target.value })} /></Field>
-            <Field label="Vesile"><Select value={d.occasion} onChange={(e: any) => updateDay(d.id, { occasion: e.target.value })} options={['Doğum Günü','Yıl Dönümü','Anneler Günü','Babalar Günü','Sevgililer Günü','Teşekkür','Diğer']} /></Field>
+            <Field label="Gönderim Nedeni"><Select value={d.occasion} onChange={(e: any) => updateDay(d.id, { occasion: e.target.value })} options={['Doğum Günü','Yıl Dönümü','Anneler Günü','Babalar Günü','Sevgililer Günü','Teşekkür','Diğer']} /></Field>
             {days.length > 1 && (
               <button onClick={() => removeDay(d.id)} style={{ color: 'var(--ink-40)', padding: 8 }}>
                 <Icons.Trash size={18} />

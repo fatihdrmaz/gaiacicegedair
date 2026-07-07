@@ -96,7 +96,7 @@ export function PortalLogin() {
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.2), rgba(42,67,53,0.6))' }} />
         <div style={{ position: 'absolute', bottom: 60, left: 60, right: 60, color: '#fff' }}>
           <h2 className="serif" style={{ fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 400, lineHeight: 1.15, letterSpacing: '-0.01em' }}>
-            "Çiçek varsa, alan yaşayan bir şeydir."
+            "Çiçek varsa, mekân yaşayan bir ruha dönüşür."
           </h2>
           <p style={{ marginTop: 16, fontSize: 14, opacity: 0.85, maxWidth: 380 }}>
             GAIA Kurumsal — kurumunuzun çiçek operasyonunu tek yerden yönetin.
@@ -271,14 +271,14 @@ export function PortalRegister() {
                 'GAIA Çiçeğe Dair, veri sorumlusu sıfatıyla; kurumsal başvurunuz sırasında paylaştığınız firma bilgileri, yetkili kişi kimlik ve iletişim verilerini işler.',
                 'Verileriniz; başvurunuzun değerlendirilmesi, kurumsal hesabınızın oluşturulması, sipariş ve teslimat süreçlerinin yürütülmesi ile yasal yükümlülüklerin yerine getirilmesi amaçlarıyla işlenir.',
                 'Veriler; yalnızca hizmetin sağlanması için gerekli olduğu ölçüde altyapı ve hizmet sağlayıcılarımızla ve yasal olarak yetkili kurumlarla paylaşılır; pazarlama amacıyla üçüncü taraflara satılmaz.',
-                '6698 sayılı KVKK md. 11 kapsamında verilerinize erişme, düzeltilmesini veya silinmesini isteme haklarına sahipsiniz. Talepleriniz için info@cicegedair.com adresine yazabilirsiniz.',
+                '6698 sayılı KVKK md. 11 kapsamında verilerinize erişme, düzeltilmesini veya silinmesini isteme haklarına sahipsiniz. Talepleriniz için info@gaiacicegedair.com adresine yazabilirsiniz.',
                 'Detaylı metne /kvkk sayfasından ulaşabilirsiniz.',
               ] : [
                 'Bu sözleşme, GAIA Çiçeğe Dair kurumsal portalını kullanan firma ile GAIA Çiçeğe Dair arasındaki kullanım koşullarını düzenler.',
                 'Kurumsal başvurunuz GAIA ekibi tarafından incelenir; onaylanması halinde portal erişiminiz açılır. Onay zorunlu olup başvuru tek başına üyelik hakkı doğurmaz.',
                 'Portal üzerinden oluşturulan siparişler, GAIA ile yapılan fiyat ve içerik mutabakatına tabidir. Bütçe aşan talepler yönetici onayına gönderilebilir.',
                 'Hesap güvenliğiniz ve giriş bilgilerinizin gizliliği sizin sorumluluğunuzdadır. GAIA, hizmeti iyileştirmek amacıyla sözleşme şartlarını güncelleyebilir.',
-                'Sorularınız için info@cicegedair.com adresinden bize ulaşabilirsiniz.',
+                'Sorularınız için info@gaiacicegedair.com adresinden bize ulaşabilirsiniz.',
               ]).map((p, i) => <p key={i} style={{ margin: 0 }}>{p}</p>)}
             </div>
             <PortalButton variant="primary" onClick={() => setModal(null)} style={{ marginTop: 24 }}>

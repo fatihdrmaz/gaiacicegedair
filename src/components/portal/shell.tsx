@@ -24,6 +24,7 @@ const companyNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { id: 'admin',          label: 'Admin Panel',  icon: 'Settings', href: '/admin' },
   { id: 'admin-pending',  label: 'Onaylar',      icon: 'Check',    href: '/admin/bekleyen-firmalar' },
+  { id: 'admin-quotes',   label: 'Teklifler',    icon: 'Mail',     href: '/admin/teklifler' },
   { id: 'admin-companies',label: 'Firmalar',     icon: 'User',     href: '/admin/firmalar' },
   { id: 'admin-products', label: 'Ürünler',      icon: 'Bouquet',  href: '/admin/urunler' },
   { id: 'admin-orders',   label: 'Siparişler',   icon: 'Package',  href: '/admin/siparisler' },
@@ -46,6 +47,7 @@ const titleMap: Record<string, string> = {
   '/portal/raporlar':       'Raporlar',
   '/admin':                 'Admin Panel',
   '/admin/bekleyen-firmalar':'Bekleyen Firma Onayları',
+  '/admin/teklifler':       'Gelen Teklif Talepleri',
   '/admin/firmalar':        'Firmalar',
   '/admin/urunler':         'Ürün Kataloğu',
   '/admin/siparisler':      'Tüm Siparişler',

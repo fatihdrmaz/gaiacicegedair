@@ -49,17 +49,17 @@ export function Footer({ onQuote }: { onQuote?: () => void }) {
               Çiçeği bir tasarım nesnesi olarak düşünen butik atölye. İstanbul'dan Türkiye'ye.
             </p>
             <div style={{ marginTop: 20, fontSize: 14, lineHeight: 1.7, opacity: 0.8 }}>
-              <div>Gümüşsuyu Mah. Mebusan Yokuşu No: 6/B, Beyoğlu/İstanbul</div>
+              <div>Gümüşsuyu Mah. Mebusan Yokuşu No: 26/B, Beyoğlu/İstanbul</div>
               <div>
-                <a href="tel:+905312123267" style={{ color: 'inherit', textDecoration: 'none' }}>+90 531 212 32 67</a>
+                <a href="tel:+905316513267" style={{ color: 'inherit', textDecoration: 'none' }}>+90 531 651 32 67</a>
                 {' · '}
-                <a href="mailto:info@cicegedair.com" style={{ color: 'inherit', textDecoration: 'none' }}>info@cicegedair.com</a>
+                <a href="mailto:info@gaiacicegedair.com" style={{ color: 'inherit', textDecoration: 'none' }}>info@gaiacicegedair.com</a>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
               <SocialIcon icon="Instagram" href="https://instagram.com/gaiacicegedair" />
-              <SocialIcon icon="Whatsapp" href="https://wa.me/905312123267" />
-              <SocialIcon icon="Mail" href="mailto:info@cicegedair.com" />
+              <SocialIcon icon="Whatsapp" href="https://wa.me/905316513267" />
+              <SocialIcon icon="Mail" href="mailto:info@gaiacicegedair.com" />
             </div>
             {onQuote && (
               <button onClick={onQuote} style={{ marginTop: 24, fontSize: 13, color: '#fff', opacity: 0.85, background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>

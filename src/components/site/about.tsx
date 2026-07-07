@@ -12,17 +12,23 @@ export function About({ full = false }: { full?: boolean }) {
           <div>
             <div className="overline" style={{ color: 'var(--accent)', marginBottom: 18 }}>Hakkımızda</div>
             <h2 className="serif" style={{ fontSize: 'clamp(36px, 4.5vw, 60px)', fontWeight: 400, lineHeight: 1.05, letterSpacing: '-0.01em' }}>
-              Doğanın renklerini,<br/><em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>özel anlarınıza.</em>
+              Çiçeğin dokunduğu her ana,<br/><em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>Yeryüzü Tanrıçası&apos;nın zarafetiyle.</em>
             </h2>
             <p style={{ marginTop: 26, fontSize: 17, color: 'var(--ink-60)', lineHeight: 1.7 }}>
-              GAIA, doğaya olan sevgiyi ve çiçeklerin eşsiz güzelliklerine duyulan hayranlığı birleştiren özel bir çiçek satış platformudur. Sizlere doğanın renklerini, neşesini ve zarafetini yaşatmayı ve özel anlarınızı unutulmaz kılmayı amaçlıyoruz.
+              GAIA, doğaya olan sevgiyi ve çiçeklerin eşsiz güzelliklerine duyulan hayranlığı bir araya getiren; özel anlara, sevdiklerinize ve yaşam alanlarına değer katmayı amaçlayan bir çiçek dünyasıdır.
             </p>
             <p style={{ marginTop: 16, fontSize: 17, color: 'var(--ink-60)', lineHeight: 1.7 }}>
-              GAIA olarak çiçeklerin büyüsünü keşfetmek, sevdiklerinizi mutlu etmek ve anlamlı hediyeler sunmak için buradayız.
+              Çiçeklerin yalnızca gönderilen bir hediye değil; hatırlatan, hissettiren ve bağ kuran özel bir dil olduğuna inanıyoruz. Bu yüzden GAIA&apos;da sizin için anlamlı olan günleri takip ediyor, sevdiklerinize değer verdiğiniz anlarda yanınızda oluyoruz.
+            </p>
+            <p style={{ marginTop: 16, fontSize: 17, color: 'var(--ink-60)', lineHeight: 1.7 }}>
+              Kurumsal çözümlerimizle ise markalara özel çiçek deneyimleri tasarlıyor; her şirketin kendi ihtiyaçlarına uygun, kendine ait bir çiçek dünyası oluşturuyoruz.
+            </p>
+            <p style={{ marginTop: 16, fontSize: 17, color: 'var(--ink-60)', lineHeight: 1.7 }}>
+              GAIA olarak çiçeklerin büyüsünü keşfetmek, özel anları unutulmaz kılmak ve doğanın zarafetini hayatın her alanına taşımak için buradayız.
             </p>
             {full && (
               <div style={{ marginTop: 50, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 30 }}>
-                {[['Tasarım', 'Her proje özgün konsept'],['Zanaat', 'Elle dokunulan her çiçek'],['Zamanlama', 'Doğru anda, doğru yerde']].map(([t, d], i) => (
+                {[['Tasarım', 'Her proje için özgün konsept'],['Zanaat', 'Mevsimin ruhundan ilham alan seçimler'],['Zamanlama', 'İlk dokunuştan son ana kadar özen']].map(([t, d], i) => (
                   <div key={i}>
                     <div style={{ fontSize: 11, letterSpacing: '0.25em', color: 'var(--accent)', textTransform: 'uppercase' }}>0{i+1}</div>
                     <div className="serif" style={{ fontSize: 22, marginTop: 10 }}>{t}</div>
@@ -50,13 +56,16 @@ export function WhoWeAre() {
           <div style={{ order: 1 }}>
             <div className="overline" style={{ color: 'var(--accent)', marginBottom: 18 }}>Biz Kimiz</div>
             <h2 className="serif" style={{ fontSize: 'clamp(36px, 4.5vw, 60px)', fontWeight: 400, lineHeight: 1.05, letterSpacing: '-0.01em' }}>
-              Çiçek tutkusuyla,<br/><em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>yanıp tutuşan bir ekip.</em>
+              Çiçeğe dair,<br/><em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>yeni bir deneyim.</em>
             </h2>
             <p style={{ marginTop: 26, fontSize: 17, color: 'var(--ink-60)', lineHeight: 1.7 }}>
-              GAIA ekibi, çiçek tutkusuyla yanıp tutuşan bir grup yetenekli ve yaratıcı bireyden oluşuyor. Her birimiz doğanın gücünü ve çiçeklerin insanları nasıl etkilediğini biliyoruz. Bir araya gelerek çiçek sektörüne yeni bir soluk getiriyor ve müşterilerimize unutulmaz deneyimler sunmayı hedefliyoruz.
+              GAIA, çiçeği yalnızca bir ürün değil; planlanabilen, kişiselleştirilebilen ve her ana eşlik eden bir deneyim olarak gören yeni nesil bir çiçek platformudur.
             </p>
             <p style={{ marginTop: 16, fontSize: 17, color: 'var(--ink-60)', lineHeight: 1.7 }}>
-              GAIA olarak misyonumuz, doğanın büyüleyici güzelliğini, özgünlüğünü ve canlılığını insanlarla buluşturmaktır. Her çiçeğin kendine özgü bir hikâyesi olduğuna inanıyoruz ve bu hikâyeyi sevdiklerinizle paylaşmanızı sağlamak istiyoruz. Müşterilerimize en kaliteli çiçekleri sunarak, özel anlarını daha anlamlı ve unutulmaz kılmak için çaba gösteriyoruz.
+              Bireysel müşterilerimiz için geliştirdiğimiz <strong>Özel Günlerim</strong> akışıyla önemli tarihleri hatırlayan; kurumsal çözümlerimizle markalara, otellere ve işletmelere özel çiçek süreçleri sunan bir yapı oluşturduk.
+            </p>
+            <p style={{ marginTop: 16, fontSize: 17, color: 'var(--ink-60)', lineHeight: 1.7 }}>
+              Geleneksel çiçekçiliği tasarım, teknoloji ve özenle bir araya getirerek; çiçek göndermenin daha anlamlı ve zahmetsiz bir yolunu tasarlıyoruz.
             </p>
           </div>
         </div>
@@ -68,15 +77,15 @@ export function WhoWeAre() {
 
 export function Values() {
   const values = [
-    { icon: 'Leaf',     title: 'Mevsiminde',    desc: 'Taze, mevsimine uygun ve etik kaynaklardan çiçekler.' },
-    { icon: 'Sparkle',  title: 'Özgün Konsept', desc: 'Hazır şablonlar değil, size özel moodboard ve tasarım.' },
-    { icon: 'Heart',    title: 'Hikâye Odaklı', desc: 'Her etkinliğin bir duygusu var — onu çiçekle anlatıyoruz.' },
-    { icon: 'Package',  title: 'Sürdürülebilir',desc: 'Kurutma, yeniden kullanım ve minimal atık ilkeleri.' },
+    { icon: 'Sparkle',  title: 'Kişiselleştirme', desc: 'Her kişi, marka ve özel an için farklı tasarlanan çiçek deneyimleri.' },
+    { icon: 'Calendar', title: 'Akıllı Planlama', desc: 'Özel Günlerim ile önemli tarihleri hatırlar, zamanı geldiğinde sizin adınıza hazırlarız.' },
+    { icon: 'Building', title: 'Kurumsal Kolaylık', desc: 'Şirketlere ve markalara özel seçimler, düzenli çözümler ve hızlı süreçler sunarız.' },
+    { icon: 'Heart',    title: 'Tasarım Dili', desc: 'Her çiçeği yalnızca bir ürün değil, anlatılacak bir hikâye olarak görürüz.' },
   ];
   return (
     <section style={{ padding: '100px 0', background: 'var(--paper-warm)' }}>
       <div className="container">
-        <SectionTitle eyebrow="Değerlerimiz" title={<>Çiçeğin ardındaki <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>prensipler.</em></>} />
+        <SectionTitle eyebrow="GAIA Deneyimi" title={<>Çiçeğin ardındaki <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>yeni yaklaşım.</em></>} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 30, marginTop: 60 }}>
           {values.map((v, i) => {
             const I = (Icons as any)[v.icon];
