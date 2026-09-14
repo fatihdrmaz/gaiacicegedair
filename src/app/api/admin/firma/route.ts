@@ -86,17 +86,53 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
-// DELETE — atamayı kaldır
+// DELETE
+//   ?assignmentId=… → ürün atamasını kaldırır
+//   ?companyId=…    → firmayı ve bağlı tüm kayıtları siler (siparişi olan firma silinemez)
 export async function DELETE(req: Request) {
   const gate = await requireAdmin();
   if ("error" in gate) return NextResponse.json({ error: gate.error }, { status: gate.status });
-  const assignmentId = new URL(req.url).searchParams.get("assignmentId");
-  if (!assignmentId) return NextResponse.json({ error: "assignmentId gerekli" }, { status: 400 });
+  const url = new URL(req.url);
+  const assignmentId = url.searchParams.get("assignmentId");
+  const companyId = url.searchParams.get("companyId");
   const admin = createAdminClient();
-  const { error } = await admin.from("company_products").delete().eq("id", assignmentId);
-  if (error) {
-    console.error("[admin/firma] atama silme hatası:", error);
-    return NextResponse.json({ error: "Silinemedi" }, { status: 500 });
+
+  if (assignmentId) {
+    const { error } = await admin.from("company_products").delete().eq("id", assignmentId);
+    if (error) {
+      console.error("[admin/firma] atama silme hatası:", error);
+      return NextResponse.json({ error: "Silinemedi" }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
   }
-  return NextResponse.json({ ok: true });
+
+  if (companyId) {
+    const { count, error: countErr } = await admin
+      .from("corporate_orders")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", companyId);
+    if (countErr) {
+      console.error("[admin/firma] sipariş kontrolü hatası:", countErr);
+      return NextResponse.json({ error: "Sipariş kontrolü yapılamadı" }, { status: 500 });
+    }
+    if ((count || 0) > 0) {
+      return NextResponse.json(
+        { error: `Bu firmanın ${count} siparişi var. Siparişleri olan firma silinemez; önce sipariş geçmişini arşivleyin.` },
+        { status: 409 },
+      );
+    }
+
+    await admin.from("company_products").delete().eq("company_id", companyId);
+    await admin.from("company_addresses").delete().eq("company_id", companyId);
+    await admin.from("company_employees").delete().eq("company_id", companyId);
+
+    const { error: delErr } = await admin.from("companies").delete().eq("id", companyId);
+    if (delErr) {
+      console.error("[admin/firma] firma silme hatası:", delErr);
+      return NextResponse.json({ error: "Firma silinemedi: " + delErr.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ error: "assignmentId veya companyId gerekli" }, { status: 400 });
 }

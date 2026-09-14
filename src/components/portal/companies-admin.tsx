@@ -134,6 +134,21 @@ export function PortalAdminCompanyDetail({ companyId }: { companyId: string }) {
     } catch { /* yoksay */ }
   };
 
+  const deleteCompany = async () => {
+    const name = d?.company?.name || 'bu firma';
+    if (!window.confirm(`"${name}" firması ve bağlı ürün/adres/çalışan kayıtları KALICI olarak silinecek. Devam edilsin mi?`)) return;
+    setBusy(true); setError('');
+    try {
+      const res = await fetch('/api/admin/firma?companyId=' + encodeURIComponent(companyId), { method: 'DELETE' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error || 'Firma silinemedi.');
+        return;
+      }
+      router.push('/admin/firmalar');
+    } catch { setError('Bağlantı hatası.'); } finally { setBusy(false); }
+  };
+
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-60)' }}>Yükleniyor…</div>;
   if (!d || !d.company) return <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-60)' }}>Firma bulunamadı.</div>;
 
@@ -216,6 +231,25 @@ export function PortalAdminCompanyDetail({ companyId }: { companyId: string }) {
             <div><StatusBadge status={o.status} size="sm" /></div>
           </div>
         ))}
+      </PortalCard>
+
+      <PortalCard padding={24} style={{ borderTop: '3px solid #fdeaea' }}>
+        <h3 className="serif" style={{ fontSize: 18, fontWeight: 500, color: '#9b2c2c' }}>Tehlikeli Bölge</h3>
+        <p style={{ fontSize: 13, color: 'var(--ink-60)', marginTop: 6, marginBottom: 16 }}>
+          Firmayı sildiğinizde firmaya bağlı ürün atamaları, adresler ve çalışanlar da silinir. Sipariş geçmişi olan firma silinemez.
+        </p>
+        <button
+          onClick={deleteCompany}
+          disabled={busy}
+          style={{
+            padding: '10px 18px', fontSize: 13, fontWeight: 500,
+            background: '#9b2c2c', color: '#fff', border: 'none', borderRadius: 6,
+            cursor: busy ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
+            opacity: busy ? 0.6 : 1,
+          }}
+        >
+          <Icons.Trash size={14} /> {busy ? 'Siliniyor…' : 'Firmayı Sil'}
+        </button>
       </PortalCard>
     </div>
   );
