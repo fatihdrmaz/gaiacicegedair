@@ -44,6 +44,9 @@ export function PortalAdminQuotes() {
   const [filter, setFilter] = useState<'all' | Quote['status']>('all');
   const [selected, setSelected] = useState<Quote | null>(null);
   const [note, setNote] = useState('');
+  const [pendingStatus, setPendingStatus] = useState<Quote['status'] | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [savedTick, setSavedTick] = useState(false);
 
   const load = () => {
     fetch('/api/admin/teklifler')
@@ -54,14 +57,23 @@ export function PortalAdminQuotes() {
 
   useEffect(() => { load(); }, []);
 
-  const updateStatus = async (id: string, status: Quote['status'], adminNote?: string) => {
-    await fetch('/api/admin/teklifler', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id, status, admin_note: adminNote }),
-    });
-    load();
-    if (selected?.id === id) setSelected(s => s ? { ...s, status, admin_note: adminNote ?? s.admin_note } : null);
+  const save = async () => {
+    if (!selected) return;
+    const status = pendingStatus ?? selected.status;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/teklifler', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: selected.id, status, admin_note: note }),
+      });
+      if (!res.ok) { alert('Kaydedilemedi.'); return; }
+      setSelected(s => s ? { ...s, status, admin_note: note } : null);
+      setPendingStatus(null);
+      setSavedTick(true);
+      setTimeout(() => setSavedTick(false), 1800);
+      load();
+    } finally { setSaving(false); }
   };
 
   if (quotes === null) return <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-40)' }}>Yükleniyor…</div>;
@@ -118,7 +130,7 @@ export function PortalAdminQuotes() {
           {filtered.map(q => (
             <PortalCard key={q.id} padding={20}>
               <div
-                onClick={() => { setSelected(q); setNote(q.admin_note || ''); }}
+                onClick={() => { setSelected(q); setNote(q.admin_note || ''); setPendingStatus(null); setSavedTick(false); }}
                 style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 20, alignItems: 'center', cursor: 'pointer' }}
               >
                 <div>
@@ -204,19 +216,40 @@ export function PortalAdminQuotes() {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {(['new', 'contacted', 'quoted', 'won', 'lost'] as const).map(s => (
-                <button
-                  key={s}
-                  onClick={() => updateStatus(selected.id, s, note)}
-                  style={{
-                    padding: '8px 14px', fontSize: 12.5, borderRadius: 4, cursor: 'pointer',
-                    background: selected.status === s ? STATUS_COLOR[s] : 'transparent',
-                    color: selected.status === s ? '#fff' : STATUS_COLOR[s],
-                    border: `1px solid ${STATUS_COLOR[s]}`, fontWeight: 500,
-                  }}
-                >{STATUS_LABEL[s]}</button>
-              ))}
+            <div style={{ fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--ink-40)', marginBottom: 8 }}>Durum</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+              {(['new', 'contacted', 'quoted', 'won', 'lost'] as const).map(s => {
+                const currentStatus = pendingStatus ?? selected.status;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => setPendingStatus(s)}
+                    style={{
+                      padding: '8px 14px', fontSize: 12.5, borderRadius: 4, cursor: 'pointer',
+                      background: currentStatus === s ? STATUS_COLOR[s] : 'transparent',
+                      color: currentStatus === s ? '#fff' : STATUS_COLOR[s],
+                      border: `1px solid ${STATUS_COLOR[s]}`, fontWeight: 500,
+                    }}
+                  >{STATUS_LABEL[s]}</button>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+              {savedTick && <span style={{ fontSize: 12.5, color: '#15803d', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icons.Check size={14} /> Kaydedildi</span>}
+              <button
+                onClick={() => setSelected(null)}
+                style={{ padding: '10px 18px', fontSize: 13, color: 'var(--ink-60)', background: 'transparent', border: '1px solid var(--line)', borderRadius: 6, cursor: 'pointer' }}
+              >Kapat</button>
+              <button
+                onClick={save}
+                disabled={saving}
+                style={{
+                  padding: '10px 20px', fontSize: 13, fontWeight: 500,
+                  background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6,
+                  cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1,
+                }}
+              >{saving ? 'Kaydediliyor…' : 'Kaydet'}</button>
             </div>
           </div>
         </div>

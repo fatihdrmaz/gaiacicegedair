@@ -12,7 +12,7 @@ type Company = {
 };
 
 const STATUS_TR: Record<string, string> = {
-  pending: 'Onay bekliyor', approved: 'Onaylı', rejected: 'Reddedildi',
+  pending: 'Onay bekliyor', approved: 'Onaylı', rejected: 'Reddedildi', archived: 'Arşivde',
 };
 
 export function PortalAdminCompanies() {
@@ -20,14 +20,16 @@ export function PortalAdminCompanies() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
-    fetch('/api/admin/firma')
+    setLoading(true);
+    fetch('/api/admin/firma' + (showArchived ? '?includeArchived=1' : ''))
       .then(r => r.json())
       .then(d => setCompanies(d.companies || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [showArchived]);
 
   const filtered = companies.filter(c =>
     q === '' || c.name.toLowerCase().includes(q.toLowerCase()) ||
@@ -43,12 +45,19 @@ export function PortalAdminCompanies() {
         ve o firmaya özel ürün/fiyat tanımlayabilirsiniz.
       </p>
 
-      <div style={{ position: 'relative', maxWidth: 320 }}>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Firma ara…"
-          style={{ padding: '10px 14px 10px 36px', fontSize: 13, border: '1px solid var(--line)', borderRadius: 6, width: '100%', background: 'var(--paper)', outline: 'none' }} />
-        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-40)' }}>
-          <Icons.Search size={14} />
-        </span>
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Firma ara…"
+            style={{ padding: '10px 14px 10px 36px', fontSize: 13, border: '1px solid var(--line)', borderRadius: 6, width: '100%', background: 'var(--paper)', outline: 'none' }} />
+          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-40)' }}>
+            <Icons.Search size={14} />
+          </span>
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-60)', cursor: 'pointer' }}>
+          <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)}
+            style={{ accentColor: 'var(--accent)', cursor: 'pointer' }} />
+          Arşivlenenleri de göster
+        </label>
       </div>
 
       <PortalCard padding={0}>
@@ -76,8 +85,8 @@ export function PortalAdminCompanies() {
             <div>
               <span style={{
                 padding: '4px 10px', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 500, borderRadius: 999,
-                background: c.status === 'approved' ? 'var(--accent-soft)' : c.status === 'pending' ? '#FFF4E5' : '#fdeaea',
-                color: c.status === 'approved' ? 'var(--accent-deep)' : c.status === 'pending' ? '#995200' : '#9b2c2c',
+                background: c.status === 'approved' ? 'var(--accent-soft)' : c.status === 'pending' ? '#FFF4E5' : c.status === 'archived' ? '#f0f0eb' : '#fdeaea',
+                color: c.status === 'approved' ? 'var(--accent-deep)' : c.status === 'pending' ? '#995200' : c.status === 'archived' ? 'var(--ink-60)' : '#9b2c2c',
               }}>{STATUS_TR[c.status] || c.status}</span>
             </div>
           </div>
@@ -146,6 +155,33 @@ export function PortalAdminCompanyDetail({ companyId }: { companyId: string }) {
         return;
       }
       router.push('/admin/firmalar');
+    } catch { setError('Bağlantı hatası.'); } finally { setBusy(false); }
+  };
+
+  const archiveCompany = async () => {
+    const name = d?.company?.name || 'bu firma';
+    if (!window.confirm(`"${name}" firması arşivlenecek — firma listesinde görünmez olacak ama sipariş geçmişi korunacak. Devam edilsin mi?`)) return;
+    setBusy(true); setError('');
+    try {
+      const res = await fetch('/api/admin/firma?companyId=' + encodeURIComponent(companyId) + '&mode=archive', { method: 'DELETE' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error || 'Arşivlenemedi.');
+        return;
+      }
+      router.push('/admin/firmalar');
+    } catch { setError('Bağlantı hatası.'); } finally { setBusy(false); }
+  };
+
+  const unarchiveCompany = async () => {
+    setBusy(true); setError('');
+    try {
+      const res = await fetch('/api/admin/firma', {
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ companyId, status: 'approved' }),
+      });
+      if (!res.ok) { setError('Geri alınamadı.'); return; }
+      load();
     } catch { setError('Bağlantı hatası.'); } finally { setBusy(false); }
   };
 
@@ -235,21 +271,69 @@ export function PortalAdminCompanyDetail({ companyId }: { companyId: string }) {
 
       <PortalCard padding={24} style={{ borderTop: '3px solid #fdeaea' }}>
         <h3 className="serif" style={{ fontSize: 18, fontWeight: 500, color: '#9b2c2c' }}>Tehlikeli Bölge</h3>
-        <p style={{ fontSize: 13, color: 'var(--ink-60)', marginTop: 6, marginBottom: 16 }}>
-          Firmayı sildiğinizde firmaya bağlı ürün atamaları, adresler ve çalışanlar da silinir. Sipariş geçmişi olan firma silinemez.
-        </p>
-        <button
-          onClick={deleteCompany}
-          disabled={busy}
-          style={{
-            padding: '10px 18px', fontSize: 13, fontWeight: 500,
-            background: '#9b2c2c', color: '#fff', border: 'none', borderRadius: 6,
-            cursor: busy ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
-            opacity: busy ? 0.6 : 1,
-          }}
-        >
-          <Icons.Trash size={14} /> {busy ? 'Siliniyor…' : 'Firmayı Sil'}
-        </button>
+        {c.status === 'archived' ? (
+          <>
+            <p style={{ fontSize: 13, color: 'var(--ink-60)', marginTop: 6, marginBottom: 16 }}>
+              Bu firma şu anda <strong>arşivde</strong> — listede görünmüyor. Geri aktif edebilir veya kalıcı olarak silebilirsiniz.
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                onClick={unarchiveCompany}
+                disabled={busy}
+                style={{
+                  padding: '10px 18px', fontSize: 13, fontWeight: 500,
+                  background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6,
+                  cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.6 : 1,
+                }}
+              >Arşivden Çıkar</button>
+              <button
+                onClick={deleteCompany}
+                disabled={busy}
+                style={{
+                  padding: '10px 18px', fontSize: 13, fontWeight: 500,
+                  background: '#9b2c2c', color: '#fff', border: 'none', borderRadius: 6,
+                  cursor: busy ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
+                  opacity: busy ? 0.6 : 1,
+                }}
+              >
+                <Icons.Trash size={14} /> {busy ? 'Siliniyor…' : 'Kalıcı Olarak Sil'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: 13, color: 'var(--ink-60)', marginTop: 6, marginBottom: 16 }}>
+              <strong>Arşivle:</strong> firma listede görünmez olur, sipariş geçmişi korunur. İstediğiniz zaman geri alabilirsiniz.<br/>
+              <strong>Sil:</strong> firma ve bağlı ürün atamaları, adresler, çalışanlar KALICI olarak silinir. Sipariş geçmişi olan firma silinemez.
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                onClick={archiveCompany}
+                disabled={busy}
+                style={{
+                  padding: '10px 18px', fontSize: 13, fontWeight: 500,
+                  background: 'transparent', color: 'var(--ink)', border: '1px solid var(--ink-20)', borderRadius: 6,
+                  cursor: busy ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
+                  opacity: busy ? 0.6 : 1,
+                }}
+              >
+                <Icons.Package size={14} /> {busy ? '…' : 'Arşivle'}
+              </button>
+              <button
+                onClick={deleteCompany}
+                disabled={busy}
+                style={{
+                  padding: '10px 18px', fontSize: 13, fontWeight: 500,
+                  background: '#9b2c2c', color: '#fff', border: 'none', borderRadius: 6,
+                  cursor: busy ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
+                  opacity: busy ? 0.6 : 1,
+                }}
+              >
+                <Icons.Trash size={14} /> {busy ? 'Siliniyor…' : 'Firmayı Sil'}
+              </button>
+            </div>
+          </>
+        )}
       </PortalCard>
     </div>
   );

@@ -26,13 +26,16 @@ export async function GET(req: Request) {
   const gate = await requireAdmin();
   if ("error" in gate) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const admin = createAdminClient();
-  const id = new URL(req.url).searchParams.get("id");
+  const reqUrl = new URL(req.url);
+  const id = reqUrl.searchParams.get("id");
+  const includeArchived = reqUrl.searchParams.get("includeArchived") === "1";
 
   if (!id) {
-    const { data } = await admin
+    let query = admin
       .from("companies")
-      .select("id, name, status, sector, city, contact_name, email, phone, created_at")
-      .order("name");
+      .select("id, name, status, sector, city, contact_name, email, phone, created_at");
+    if (!includeArchived) query = query.neq("status", "archived");
+    const { data } = await query.order("name");
     return NextResponse.json({ companies: data || [] });
   }
 
@@ -86,9 +89,34 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
+// PATCH — firma durumunu güncelle (arşivden çıkarma vb.)
+const patchSchema = z.object({
+  companyId: z.string().uuid(),
+  status: z.enum(["pending", "approved", "rejected", "archived"]),
+});
+
+export async function PATCH(req: Request) {
+  const gate = await requireAdmin();
+  if ("error" in gate) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  const body = await req.json().catch(() => null);
+  const parsed = patchSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Geçersiz istek" }, { status: 422 });
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("companies")
+    .update({ status: parsed.data.status })
+    .eq("id", parsed.data.companyId);
+  if (error) {
+    console.error("[admin/firma] durum güncelleme hatası:", error);
+    return NextResponse.json({ error: "Güncellenemedi" }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
 // DELETE
-//   ?assignmentId=… → ürün atamasını kaldırır
-//   ?companyId=…    → firmayı ve bağlı tüm kayıtları siler (siparişi olan firma silinemez)
+//   ?assignmentId=…           → ürün atamasını kaldırır
+//   ?companyId=…              → firmayı ve bağlı tüm kayıtları siler (siparişi olan firma silinemez)
+//   ?companyId=…&mode=archive → firmayı arşivler (sipariş geçmişi korunur)
 export async function DELETE(req: Request) {
   const gate = await requireAdmin();
   if ("error" in gate) return NextResponse.json({ error: gate.error }, { status: gate.status });
@@ -107,6 +135,17 @@ export async function DELETE(req: Request) {
   }
 
   if (companyId) {
+    const mode = url.searchParams.get("mode"); // 'archive' | undefined
+
+    if (mode === "archive") {
+      const { error } = await admin.from("companies").update({ status: "archived" }).eq("id", companyId);
+      if (error) {
+        console.error("[admin/firma] arşivleme hatası:", error);
+        return NextResponse.json({ error: "Arşivlenemedi: " + error.message }, { status: 500 });
+      }
+      return NextResponse.json({ ok: true, archived: true });
+    }
+
     const { count, error: countErr } = await admin
       .from("corporate_orders")
       .select("id", { count: "exact", head: true })
@@ -117,7 +156,11 @@ export async function DELETE(req: Request) {
     }
     if ((count || 0) > 0) {
       return NextResponse.json(
-        { error: `Bu firmanın ${count} siparişi var. Siparişleri olan firma silinemez; önce sipariş geçmişini arşivleyin.` },
+        {
+          error: `Bu firmanın ${count} siparişi var. Sipariş geçmişi olan firma kalıcı olarak silinemez — bunun yerine "Arşivle" seçeneğini kullanın; firma listede görünmez ama sipariş geçmişi korunur.`,
+          canArchive: true,
+          orderCount: count,
+        },
         { status: 409 },
       );
     }
