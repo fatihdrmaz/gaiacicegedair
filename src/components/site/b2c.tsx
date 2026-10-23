@@ -4,9 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button, Field, Input, Select, TextArea } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
-import { PACKAGES } from '@/lib/b2c-packages';
-
-export { PACKAGES };
+import type { B2CPackage } from '@/lib/b2c-packages';
 
 
 export const OCCASIONS = [
@@ -31,6 +29,21 @@ export function B2CPage() {
     { id: 1, name: 'Eşimin Doğum Günü', date: '2026-05-16', occasion: 'Doğum Günü', recipient: '',  address: '', time: '10:00', note: '', concept: 'Romantik', package: 'orta' },
   ]);
   const [confirmed, setConfirmed] = useState(false);
+  const [packages, setPackages] = useState<B2CPackage[] | null>(null);
+
+  useEffect(() => {
+    fetch('/api/paketler')
+      .then(r => r.json())
+      .then(d => setPackages(d.packages || []))
+      .catch(() => setPackages([]));
+  }, []);
+
+  // Paketler yüklenince listede olmayan seçimleri varsayılan pakete çek
+  useEffect(() => {
+    if (!packages || packages.length === 0) return;
+    const fallback = (packages.find(p => p.id === 'orta') || packages[0]).id;
+    setDays(ds => ds.map(d => packages.some(p => p.id === d.package) ? d : { ...d, package: fallback }));
+  }, [packages]);
 
   // iyzico ödeme dönüşünde ?odeme=basarili ile gelir
   useEffect(() => {
@@ -48,7 +61,7 @@ export function B2CPage() {
   const removeDay = (id: number) => setDays(ds => ds.filter(d => d.id !== id));
   const updateDay = (id: number, patch: Partial<Day>) => setDays(ds => ds.map(d => d.id === id ? { ...d, ...patch } : d));
 
-  const total = days.reduce((s, d) => s + (PACKAGES.find(p => p.id === d.package)?.price || 0), 0);
+  const total = days.reduce((s, d) => s + (packages?.find(p => p.id === d.package)?.price || 0), 0);
   const steps = ['Özel Günler', 'Detaylar', 'Paketler', 'Özet'];
 
   return (
@@ -88,8 +101,8 @@ export function B2CPage() {
         {confirmed ? <B2CConfirm total={total} days={days} onReset={() => { setConfirmed(false); setStep(0); }} />
           : step === 0 ? <B2CStep1 days={days} addDay={addDay} removeDay={removeDay} updateDay={updateDay} onNext={() => setStep(1)} />
           : step === 1 ? <B2CStep2 days={days} updateDay={updateDay} onBack={() => setStep(0)} onNext={() => setStep(2)} />
-          : step === 2 ? <B2CStep3 days={days} updateDay={updateDay} onBack={() => setStep(1)} onNext={() => setStep(3)} />
-          :              <B2CStep4 days={days} total={total} onBack={() => setStep(2)} onConfirm={() => setConfirmed(true)} />
+          : step === 2 ? <B2CStep3 packages={packages} days={days} updateDay={updateDay} onBack={() => setStep(1)} onNext={() => setStep(3)} />
+          :              <B2CStep4 packages={packages || []} days={days} total={total} onBack={() => setStep(2)} onConfirm={() => setConfirmed(true)} />
         }
       </div>
     </section>
@@ -201,13 +214,16 @@ export function B2CStep2({ days, updateDay, onBack, onNext }: { days: Day[]; upd
   );
 }
 
-export function B2CStep3({ days, updateDay, onBack, onNext }: { days: Day[]; updateDay: (id: number, patch: Partial<Day>) => void; onBack: () => void; onNext: () => void }) {
+export function B2CStep3({ packages, days, updateDay, onBack, onNext }: { packages: B2CPackage[] | null; days: Day[]; updateDay: (id: number, patch: Partial<Day>) => void; onBack: () => void; onNext: () => void }) {
   return (
     <div>
       <h2 className="serif" style={{ fontSize: 30, marginBottom: 10, fontWeight: 400 }}>Her gün için paket seç</h2>
       <p style={{ color: 'var(--ink-60)', marginBottom: 30 }}>Her özel gününe farklı bir paket atayabilirsin.</p>
 
-      {days.map((d, idx) => (
+      {packages === null && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-60)' }}>Paketler yükleniyor…</div>}
+      {packages?.length === 0 && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-60)' }}>Şu anda tanımlı paket bulunmuyor.</div>}
+
+      {packages && packages.length > 0 && days.map((d, idx) => (
         <div key={d.id} style={{ marginBottom: 40, paddingBottom: 30, borderBottom: idx < days.length - 1 ? '1px solid var(--line)' : 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22 }}>
             <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
@@ -216,7 +232,7 @@ export function B2CStep3({ days, updateDay, onBack, onNext }: { days: Day[]; upd
             <div className="serif" style={{ fontSize: 22 }}>{d.name || '(Adsız)'} · <span style={{ fontSize: 14, color: 'var(--ink-40)', letterSpacing: '0.1em' }}>{d.date}</span></div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-            {PACKAGES.map(p => {
+            {packages!.map(p => {
               const selected = d.package === p.id;
               return (
                 <div key={p.id} onClick={() => updateDay(d.id, { package: p.id })} style={{
@@ -247,13 +263,13 @@ export function B2CStep3({ days, updateDay, onBack, onNext }: { days: Day[]; upd
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
         <Button variant="ghost" onClick={onBack} icon={<Icons.ArrowLeft size={14} />}>Geri</Button>
-        <Button variant="primary" size="lg" onClick={onNext} iconRight={<Icons.Arrow size={14} />}>Özete Geç</Button>
+        <Button variant="primary" size="lg" onClick={onNext} disabled={!packages || packages.length === 0} iconRight={<Icons.Arrow size={14} />}>Özete Geç</Button>
       </div>
     </div>
   );
 }
 
-export function B2CStep4({ days, total, onBack, onConfirm }: { days: Day[]; total: number; onBack: () => void; onConfirm: () => void }) {
+export function B2CStep4({ packages, days, total, onBack, onConfirm }: { packages: B2CPackage[]; days: Day[]; total: number; onBack: () => void; onConfirm: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [buyer, setBuyer] = useState({ name: '', email: '', phone: '' });
@@ -305,7 +321,7 @@ export function B2CStep4({ days, total, onBack, onConfirm }: { days: Day[]; tota
           <div className="overline" style={{ color: 'var(--accent)', marginBottom: 16 }}>Takvim</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {days.map((d, i) => {
-              const pkg = PACKAGES.find(p => p.id === d.package);
+              const pkg = packages.find(p => p.id === d.package);
               return (
                 <div key={d.id} style={{ display: 'grid', gridTemplateColumns: '50px 1fr auto', gap: 16, alignItems: 'center', paddingBottom: 16, borderBottom: i < days.length - 1 ? '1px dashed var(--line)' : 'none' }}>
                   <div style={{ textAlign: 'center' }}>

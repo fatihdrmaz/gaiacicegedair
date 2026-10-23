@@ -3,8 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { initCheckoutForm, iyzicoConfigured, clientIp } from "@/lib/iyzico";
-import { PACKAGE_PRICES } from "@/lib/b2c-packages";
-
+import { loadPackages } from "@/lib/b2c-packages-server";
 
 const daySchema = z.object({
   name: z.string().optional().default(""),
@@ -15,7 +14,7 @@ const daySchema = z.object({
   time: z.string().optional().default("10:00"),
   note: z.string().optional().default(""),
   concept: z.string().optional().default(""),
-  package: z.string().refine((p) => p in PACKAGE_PRICES, "Geçersiz paket"),
+  package: z.string().min(1, "Paket seçilmeli"),
 });
 
 const schema = z.object({
@@ -45,9 +44,14 @@ export async function POST(req: Request) {
   const { days, buyer } = parsed.data;
 
   // Fiyatlar sunucuda hesaplanır — istemciden gelen total'a güvenilmez.
+  const packages = new Map((await loadPackages()).map((p) => [p.id, p]));
+  if (days.some((d) => !packages.has(d.package))) {
+    return NextResponse.json({ error: "Seçilen paket artık mevcut değil, lütfen paketi yeniden seçin." }, { status: 422 });
+  }
   const items = days.map((d) => ({
     ...d,
-    price: PACKAGE_PRICES[d.package],
+    packageName: packages.get(d.package)!.name,
+    price: packages.get(d.package)!.price,
   }));
   const total = items.reduce((s, it) => s + it.price, 0);
 
@@ -97,7 +101,7 @@ export async function POST(req: Request) {
       delivery_time: it.time || "10:00",
       concept: it.concept || null,
       note: it.note || null,
-      package: it.package,
+      package: it.packageName,
       package_price: it.price,
       status: "pending",
     })),
@@ -136,7 +140,7 @@ export async function POST(req: Request) {
       },
       basketItems: items.map((it, i) => ({
         id: `${order.id}-${i}`,
-        name: `${it.name || "Özel gün"} — ${it.package}`,
+        name: `${it.name || "Özel gün"} — ${it.packageName}`,
         price: it.price,
       })),
     });
