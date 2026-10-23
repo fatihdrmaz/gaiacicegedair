@@ -3,13 +3,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { initCheckoutForm, iyzicoConfigured, clientIp } from "@/lib/iyzico";
+import { PACKAGE_PRICES } from "@/lib/b2c-packages";
 
-const PACKAGE_PRICES: Record<string, number> = {
-  mini: 450,
-  klasik: 850,
-  premium: 1600,
-  luks: 3200,
-};
 
 const daySchema = z.object({
   name: z.string().optional().default(""),
@@ -20,7 +15,7 @@ const daySchema = z.object({
   time: z.string().optional().default("10:00"),
   note: z.string().optional().default(""),
   concept: z.string().optional().default(""),
-  package: z.string().optional().default("klasik"),
+  package: z.string().refine((p) => p in PACKAGE_PRICES, "Geçersiz paket"),
 });
 
 const schema = z.object({
@@ -52,7 +47,7 @@ export async function POST(req: Request) {
   // Fiyatlar sunucuda hesaplanır — istemciden gelen total'a güvenilmez.
   const items = days.map((d) => ({
     ...d,
-    price: PACKAGE_PRICES[d.package] ?? PACKAGE_PRICES.klasik,
+    price: PACKAGE_PRICES[d.package],
   }));
   const total = items.reduce((s, it) => s + it.price, 0);
 
