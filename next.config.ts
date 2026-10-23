@@ -34,6 +34,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // iyzipay dinamik require kullanır; bundler dışında bırakılır.
   serverExternalPackages: ["iyzipay"],
+  // iyzipay, lib/resources klasörünü çalışma anında readdirSync ile okur; dosya izleme bunu yakalamaz.
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./node_modules/iyzipay/lib/**/*"],
+  },
   async headers() {
     return [
       {
