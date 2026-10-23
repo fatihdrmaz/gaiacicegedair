@@ -29,7 +29,8 @@ export async function POST(req: Request) {
     return NextResponse.redirect(`${siteUrl}/ozel-gunlerim?odeme=hata`, 303);
   }
 
-  const conv = result.conversationId || "";
+  // iyzico detay yanıtında conversationId boş gelebiliyor; basketId sipariş kimliğini her zaman taşır.
+  const conv = result.basketId || result.conversationId || "";
   const paid = result.paymentStatus === "SUCCESS" && result.status === "success";
 
   if (!conv) {
@@ -120,5 +121,10 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.redirect(`${siteUrl}/ozel-gunlerim?odeme=basarili`, 303);
+  const qs = new URLSearchParams({
+    odeme: "basarili",
+    tutar: String(Number(order?.total_amount) || 0),
+    gun: String(order?.b2c_order_items?.length || 0),
+  });
+  return NextResponse.redirect(`${siteUrl}/ozel-gunlerim?${qs}`, 303);
 }

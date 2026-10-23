@@ -29,6 +29,8 @@ export function B2CPage() {
     { id: 1, name: '', date: '', occasion: 'Doğum Günü', recipient: '',  address: '', time: '10:00', note: '', concept: 'Romantik', package: 'orta' },
   ]);
   const [confirmed, setConfirmed] = useState(false);
+  const [paidSummary, setPaidSummary] = useState<{ total: number; days: number } | null>(null);
+  const [paymentError, setPaymentError] = useState(false);
   const [packages, setPackages] = useState<B2CPackage[] | null>(null);
 
   useEffect(() => {
@@ -48,10 +50,14 @@ export function B2CPage() {
   // iyzico ödeme dönüşünde ?odeme=basarili ile gelir
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('odeme') === 'basarili') {
+    const odeme = params.get('odeme');
+    if (odeme === 'basarili') {
+      setPaidSummary({ total: Number(params.get('tutar')) || 0, days: Number(params.get('gun')) || 0 });
       setConfirmed(true);
-      window.history.replaceState({}, '', '/ozel-gunlerim');
+    } else if (odeme === 'basarisiz' || odeme === 'hata') {
+      setPaymentError(true);
     }
+    if (odeme) window.history.replaceState({}, '', '/ozel-gunlerim');
   }, []);
 
   const addDay = () => setDays(ds => [...ds, {
@@ -80,6 +86,12 @@ export function B2CPage() {
           </p>
         </div>
 
+        {paymentError && (
+          <div style={{ marginBottom: 30, padding: '14px 18px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 14, textAlign: 'center' }}>
+            Ödeme tamamlanamadı, kartınızdan çekim yapılmadıysa tekrar deneyebilirsiniz. Sorun sürerse bize +90 531 651 32 67 numarasından ulaşın.
+          </div>
+        )}
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 60, flexWrap: 'wrap' }}>
           {steps.map((s, i) => (
             <React.Fragment key={i}>
@@ -98,7 +110,7 @@ export function B2CPage() {
           ))}
         </div>
 
-        {confirmed ? <B2CConfirm total={total} days={days} onReset={() => { setConfirmed(false); setStep(0); }} />
+        {confirmed ? <B2CConfirm total={paidSummary?.total ?? total} dayCount={paidSummary?.days ?? days.length} onReset={() => { setConfirmed(false); setPaidSummary(null); setStep(0); }} />
           : step === 0 ? <B2CStep1 days={days} addDay={addDay} removeDay={removeDay} updateDay={updateDay} onNext={() => setStep(1)} />
           : step === 1 ? <B2CStep2 days={days} updateDay={updateDay} onBack={() => setStep(0)} onNext={() => setStep(2)} />
           : step === 2 ? <B2CStep3 packages={packages} days={days} updateDay={updateDay} onBack={() => setStep(1)} onNext={() => setStep(3)} />
@@ -415,7 +427,7 @@ export function B2CStep4({ packages, days, total, onBack, onConfirm }: { package
   );
 }
 
-export function B2CConfirm({ total, days, onReset }: { total: number; days: Day[]; onReset: () => void }) {
+export function B2CConfirm({ total, dayCount, onReset }: { total: number; dayCount: number; onReset: () => void }) {
   return (
     <div style={{ textAlign: 'center', padding: '60px 0' }}>
       <div style={{ width: 80, height: 80, margin: '0 auto', borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -423,7 +435,7 @@ export function B2CConfirm({ total, days, onReset }: { total: number; days: Day[
       </div>
       <h2 className="serif" style={{ fontSize: 44, marginTop: 30, fontWeight: 400 }}>Takvimin hazır</h2>
       <p style={{ color: 'var(--ink-60)', marginTop: 14, maxWidth: 520, margin: '14px auto 0', fontSize: 17, lineHeight: 1.6 }}>
-        Toplam <strong>{total.toLocaleString('tr-TR')} ₺</strong> ödemen alındı. Artık {days.length} özel günü unutmana gerek yok — o günlerde çiçekler senin adına yerine ulaşacak.
+        Toplam <strong>{total.toLocaleString('tr-TR')} ₺</strong> ödemen alındı. Artık {dayCount > 0 ? `${dayCount} ` : ''}özel günü unutmana gerek yok — o günlerde çiçekler senin adına yerine ulaşacak.
       </p>
       <div style={{ display: 'flex', gap: 14, justifyContent: 'center', marginTop: 40 }}>
         <Button variant="primary" onClick={onReset}>Yeni Takvim</Button>

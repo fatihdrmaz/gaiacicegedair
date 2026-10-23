@@ -45,6 +45,7 @@ type RetrieveResult = CheckoutResult & {
   paymentStatus?: string;
   paymentId?: string;
   conversationId?: string;
+  basketId?: string;
 };
 
 // SDK'daki utils.formatPrice ile aynı: 50 → "50.0", 49.9 → "49.9"
