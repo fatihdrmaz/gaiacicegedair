@@ -26,7 +26,7 @@ type Day = {
 export function B2CPage() {
   const [step, setStep] = useState(0);
   const [days, setDays] = useState<Day[]>([
-    { id: 1, name: 'Eşimin Doğum Günü', date: '2026-05-16', occasion: 'Doğum Günü', recipient: '',  address: '', time: '10:00', note: '', concept: 'Romantik', package: 'orta' },
+    { id: 1, name: '', date: '', occasion: 'Doğum Günü', recipient: '',  address: '', time: '10:00', note: '', concept: 'Romantik', package: 'orta' },
   ]);
   const [confirmed, setConfirmed] = useState(false);
   const [packages, setPackages] = useState<B2CPackage[] | null>(null);
