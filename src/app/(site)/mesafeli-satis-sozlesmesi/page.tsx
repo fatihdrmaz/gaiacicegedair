@@ -28,7 +28,7 @@ export default function MesafeliSatisPage() {
 
       <LegalHeading>2. Sözleşmenin Konusu</LegalHeading>
       <LegalText>
-        İşbu sözleşme, alıcının satıcıya ait <strong>cicegedair.com</strong> internet sitesi ve
+        İşbu sözleşme, alıcının satıcıya ait <strong>www.gaiacicegedair.com</strong> internet sitesi ve
         kurumsal portal üzerinden elektronik ortamda verdiği siparişe konu ürün/hizmetin satışı ve
         teslimi ile tarafların hak ve yükümlülüklerinin belirlenmesine ilişkindir. Taraflar, 6502
         sayılı Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümlerini bildiklerini ve anladıklarını

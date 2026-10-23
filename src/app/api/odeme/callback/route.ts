@@ -5,7 +5,7 @@ import { sendMail, GAIA_NOTIFY_EMAIL } from "@/lib/resend";
 import { B2CSiparisOnaylandiEmail } from "@/emails/b2c-siparis-onaylandi";
 
 export async function POST(req: Request) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gaiacicegedair.com";
 
   let token: string | null = null;
   try {

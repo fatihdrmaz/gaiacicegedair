@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { SERVICE_DETAILS } from '@/lib/content';
 import { getPublishedPosts } from '@/lib/blog';
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://cicegedair.com';
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.gaiacicegedair.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();

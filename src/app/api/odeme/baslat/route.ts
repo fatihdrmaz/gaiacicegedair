@@ -113,7 +113,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Sipariş satırları kaydedilemedi" }, { status: 500 });
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gaiacicegedair.com";
 
   // iyzico anahtarları yoksa ödeme atlanır — geliştirme modu.
   if (!iyzicoConfigured) {

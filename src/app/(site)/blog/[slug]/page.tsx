@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getPublishedPosts, getPostBySlug, type BlogPost } from '@/lib/blog';
 import { BlogDetailPage } from '@/components/site/blog';
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://cicegedair.com';
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.gaiacicegedair.com';
 
 // ISR — blog içeriği saatte bir yeniden oluşturulur.
 export const revalidate = 3600;

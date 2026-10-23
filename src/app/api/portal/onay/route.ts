@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Firma bulunamadı" }, { status: 404 });
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gaiacicegedair.com";
 
   if (action === "approve") {
     await admin

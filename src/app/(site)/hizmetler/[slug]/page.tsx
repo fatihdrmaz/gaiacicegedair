@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { SERVICE_DETAILS } from '@/lib/content';
 import { ServiceDetailClient } from '@/components/site/service-detail-client';
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://cicegedair.com';
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.gaiacicegedair.com';
 
 type ServiceDetail = { title: string; summary?: string; tagline?: string };
 

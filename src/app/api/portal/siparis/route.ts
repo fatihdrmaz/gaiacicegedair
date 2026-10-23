@@ -153,7 +153,7 @@ export async function POST(req: Request) {
   }
 
   // Kredi kartı ödemesi — iyzico checkout
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gaiacicegedair.com";
   if (!iyzicoConfigured) {
     // iyzico anahtarı yok — geliştirme modu, sipariş oluşturuldu kabul edilir
     return NextResponse.json({ ok: true, id: order.id, devMode: true });
