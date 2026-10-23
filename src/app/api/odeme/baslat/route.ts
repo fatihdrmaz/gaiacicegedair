@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Sipariş oluşturulamadı" }, { status: 500 });
   }
 
-  const { error: itemsErr } = await admin.from("b2c_order_items").insert(
+  const { data: itemRows, error: itemsErr } = await admin.from("b2c_order_items").insert(
     items.map((it) => ({
       order_id: order.id,
       day_name: it.name || null,
@@ -105,9 +105,9 @@ export async function POST(req: Request) {
       package_price: it.price,
       status: "pending",
     })),
-  );
+  ).select("id");
 
-  if (itemsErr) {
+  if (itemsErr || !itemRows || itemRows.length !== items.length) {
     console.error("[odeme/baslat] satır hatası:", itemsErr);
     return NextResponse.json({ error: "Sipariş satırları kaydedilemedi" }, { status: 500 });
   }
@@ -138,8 +138,9 @@ export async function POST(req: Request) {
         address: items[0]?.address || "İstanbul",
         city: "İstanbul",
       },
+      // Sepet kalemi = sipariş satırı; iade sırasında iyzico işlemi bu id ile eşleşir.
       basketItems: items.map((it, i) => ({
-        id: `${order.id}-${i}`,
+        id: itemRows[i].id,
         name: `${it.name || "Özel gün"} — ${it.packageName}`,
         price: it.price,
       })),

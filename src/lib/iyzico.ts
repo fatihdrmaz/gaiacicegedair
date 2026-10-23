@@ -148,3 +148,41 @@ export function retrieveCheckoutForm(token: string): Promise<RetrieveResult> {
     token,
   });
 }
+
+type IyzicoResult = { status: string; errorCode?: string; errorMessage?: string };
+
+export type PaymentDetail = IyzicoResult & {
+  paymentId?: string;
+  basketId?: string;
+  itemTransactions?: { itemId: string; paymentTransactionId: string; paidPrice: number }[];
+};
+
+export function retrievePayment(paymentId: string): Promise<PaymentDetail> {
+  return post<PaymentDetail>("/payment/detail", { locale: "tr", paymentId });
+}
+
+// Tüm ödemenin iptali — yalnızca ödeme günü, gün sonu mutabakatından önce geçer; komisyon kesilmez.
+export function cancelPayment(paymentId: string, ip?: string): Promise<IyzicoResult> {
+  return post<IyzicoResult>("/payment/cancel", {
+    locale: "tr",
+    conversationId: `iptal-${paymentId}`,
+    paymentId,
+    ip: ip || "85.34.78.112",
+  });
+}
+
+// Tek sepet kaleminin (kısmi ya da tam) iadesi.
+export function refundTransaction(
+  paymentTransactionId: string,
+  price: number,
+  ip?: string,
+): Promise<IyzicoResult & { paymentTransactionId?: string; price?: number }> {
+  return post("/payment/refund", {
+    locale: "tr",
+    conversationId: `iade-${paymentTransactionId}`,
+    paymentTransactionId,
+    price: formatPrice(price),
+    currency: "TRY",
+    ip: ip || "85.34.78.112",
+  });
+}

@@ -26,13 +26,15 @@ export function PortalAdminDashboard({ state }: { state: PortalState }) {
   const monthKey = todayIso.slice(0, 7);
 
   const activeOrders = orders.filter(o => ['pending', 'approved', 'production', 'shipping'].includes(o.status));
-  const activeB2C = b2cOrders.filter(o => o.status !== 'delivered');
+  const activeB2C = b2cOrders.filter(o => !['delivered', 'refunded', 'failed', 'pending'].includes(o.status));
   const todayDeliver = orders.filter(o => o.date === todayIso);
 
   // Aylık ciro — bu ayın kurumsal + B2C siparişleri
   const revenue =
     orders.filter(o => (o.date || '').startsWith(monthKey)).reduce((s, o) => s + o.amount, 0) +
-    b2cOrders.filter(o => (o.createdAt || '').startsWith(monthKey)).reduce((s, o) => s + o.totalAmount, 0);
+    b2cOrders
+      .filter(o => (o.createdAt || '').startsWith(monthKey) && !['pending', 'failed'].includes(o.status))
+      .reduce((s, o) => s + o.items.filter(it => it.status !== 'refunded').reduce((t, it) => t + it.packagePrice, 0), 0);
 
   // Yarınki üretim — yarın teslim/etkinlik
   const tmrCorporate = orders.filter(o => o.date === tmrIso).length;
@@ -398,7 +400,7 @@ export function PortalAdminCapacity({ state }: { state: PortalState }) {
   const inWorkshop = orders.filter(o => o.status === 'production').length;
   const activeTotal =
     orders.filter(o => !['delivered', 'rejected'].includes(o.status)).length +
-    b2cOrders.filter(o => o.status !== 'delivered').length;
+    b2cOrders.filter(o => !['delivered', 'refunded', 'failed', 'pending'].includes(o.status)).length;
 
   // Sipariş durum dağılımı (kurumsal)
   const pipeline = [
@@ -758,6 +760,7 @@ const B2C_ITEM_STATUS: Record<string, { label: string; bg: string; fg: string }>
   pending:    { label: 'Bekliyor',      bg: '#FFF4E5', fg: '#995200' },
   processing: { label: 'Hazırlanıyor',  bg: '#E5F0FF', fg: '#1F5DAB' },
   delivered:  { label: 'Teslim edildi', bg: 'var(--accent-soft)', fg: 'var(--accent-deep)' },
+  refunded:   { label: 'İade edildi',   bg: '#f0f0eb', fg: '#6b6b63' },
 };
 const B2C_ITEM_NEXT: Record<string, string> = {
   pending: 'processing',
@@ -765,8 +768,10 @@ const B2C_ITEM_NEXT: Record<string, string> = {
 };
 
 export function PortalAdminB2C({ state }: { state: PortalState }) {
-  const orders = state.b2cOrders || [];
+  // Ödemesi tamamlanmamış (yarım kalan / başarısız) denemeler iş listesine girmez
+  const orders = (state.b2cOrders || []).filter(o => !['pending', 'failed'].includes(o.status));
   const [busy, setBusy] = useState('');
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Her özel gün talebi ayrı satır — farklı tarihler ayrı ayrı yönetilir
   const items = orders
@@ -776,6 +781,7 @@ export function PortalAdminB2C({ state }: { state: PortalState }) {
       buyerEmail: o.buyerEmail,
       orderId: o.id,
       orderCreatedAt: o.createdAt,
+      orderActiveItems: o.items.filter(x => !['delivered', 'refunded'].includes(x.status)),
     })))
     .sort((a, b) => (a.eventDate || '').localeCompare(b.eventDate || ''));
 
@@ -794,8 +800,44 @@ export function PortalAdminB2C({ state }: { state: PortalState }) {
     setBusy('');
   };
 
+  const refund = async (orderId: string, targets: { id: string; dayName: string; packagePrice: number }[], whole: boolean) => {
+    const amount = targets.reduce((s, t) => s + t.packagePrice, 0);
+    const what = whole ? `siparişin tamamı (${targets.length} özel gün)` : `"${targets[0].dayName}"`;
+    if (!window.confirm(`${what} iptal edilecek ve ${fmtTL(amount)} müşterinin kartına iade edilecek. Bu işlem geri alınamaz. Devam edilsin mi?`)) return;
+    const key = whole ? orderId : targets[0].id;
+    setBusy(key);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/admin/b2c-iade', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(whole ? { orderId } : { orderId, itemId: targets[0].id }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        window.alert(json.method === 'cancel'
+          ? `Ödeme iptal edildi, ${fmtTL(json.refundedAmount)} karta iade edildi.`
+          : `${fmtTL(json.refundedAmount)} iade edildi. Kartına yansıması bankaya göre 2-10 iş günü sürebilir.`);
+        window.location.reload();
+        return;
+      }
+      setMessage({ ok: false, text: json.error || 'İade yapılamadı.' });
+      if (res.status === 207) setTimeout(() => window.location.reload(), 4000);
+    } catch {
+      setMessage({ ok: false, text: 'Bağlantı hatası.' });
+    }
+    setBusy('');
+  };
+
+  const shownOrderButtons = new Set<string>();
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {message && (
+        <div style={{ padding: '12px 16px', borderRadius: 6, fontSize: 13.5, background: message.ok ? 'var(--accent-soft)' : '#fdeaea', color: message.ok ? 'var(--accent-deep)' : '#9b2c2c' }}>
+          {message.text}
+        </div>
+      )}
       <p style={{ color: 'var(--ink-60)', fontSize: 14 }}>
         Bireysel müşterilerin “Özel Günlerim” taleplerinin tamamı. Her özel gün ayrı bir karttır;
         farklı tarihler ayrı ayrı hazırlanıp teslim edilir.
@@ -808,6 +850,9 @@ export function PortalAdminB2C({ state }: { state: PortalState }) {
       {items.map(it => {
         const st = B2C_ITEM_STATUS[it.status] || B2C_ITEM_STATUS.pending;
         const next = B2C_ITEM_NEXT[it.status];
+        const refundable = !['delivered', 'refunded'].includes(it.status);
+        const showWhole = refundable && it.orderActiveItems.length > 1 && !shownOrderButtons.has(it.orderId);
+        if (showWhole) shownOrderButtons.add(it.orderId);
         return (
           <PortalCard key={it.id} padding={24}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, marginBottom: 14 }}>
@@ -822,8 +867,13 @@ export function PortalAdminB2C({ state }: { state: PortalState }) {
                   {st.label}
                 </span>
                 {next && (
-                  <PortalButton size="sm" variant="primary" disabled={busy === it.id} onClick={() => advance(it.id, it.status)}>
+                  <PortalButton size="sm" variant="primary" disabled={!!busy} onClick={() => advance(it.id, it.status)}>
                     {busy === it.id ? '…' : (next === 'processing' ? 'Hazırlığa Al' : 'Teslim Edildi')}
+                  </PortalButton>
+                )}
+                {refundable && (
+                  <PortalButton size="sm" variant="ghost" disabled={!!busy} onClick={() => refund(it.orderId, [it], false)}>
+                    {busy === it.id ? 'İade ediliyor…' : 'İptal et ve iade et'}
                   </PortalButton>
                 )}
               </div>
@@ -837,6 +887,16 @@ export function PortalAdminB2C({ state }: { state: PortalState }) {
               <Field2 label="Paket" value={`${it.package} · ${fmtTL(it.packagePrice)}`} />
               {it.note && <Field2 label="Kart Notu" value={`“${it.note}”`} />}
             </div>
+            {showWhole && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px dashed var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12.5, color: 'var(--ink-60)' }}>
+                  Bu sipariş {it.orderActiveItems.length} özel gün içeriyor. Aynı gün yapılan tam iptalde komisyon kesilmez.
+                </span>
+                <PortalButton size="sm" variant="ghost" disabled={!!busy} onClick={() => refund(it.orderId, it.orderActiveItems, true)}>
+                  {busy === it.orderId ? 'İade ediliyor…' : `Siparişin tamamını iptal et (${fmtTL(it.orderActiveItems.reduce((s, x) => s + x.packagePrice, 0))})`}
+                </PortalButton>
+              </div>
+            )}
           </PortalCard>
         );
       })}

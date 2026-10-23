@@ -61,7 +61,7 @@ export function PortalPageShell({
     (o) => !['delivered', 'rejected'].includes(o.status),
   ).length;
   const activeB2C = state.b2cOrders.filter(
-    (o) => o.status !== 'delivered',
+    (o) => !['delivered', 'refunded', 'failed', 'pending'].includes(o.status),
   ).length;
 
   const badges: Record<string, number> = {
