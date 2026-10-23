@@ -3,6 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { retrieveCheckoutForm } from "@/lib/iyzico";
 import { sendMail, GAIA_NOTIFY_EMAIL } from "@/lib/resend";
 import { B2CSiparisOnaylandiEmail } from "@/emails/b2c-siparis-onaylandi";
+import { YeniSiparisEmail } from "@/emails/yeni-siparis";
+import { SiparisDurumuEmail } from "@/emails/siparis-durumu";
+import { UNPAID_ORDER_STATUSES } from "@/lib/portal-data";
 
 export async function POST(req: Request) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gaiacicegedair.com";
@@ -37,41 +40,104 @@ export async function POST(req: Request) {
     return NextResponse.redirect(`${siteUrl}/ozel-gunlerim?odeme=hata`, 303);
   }
 
-  // Kurumsal sipariş ödemesi (conversationId "corp-" ön ekli)
+  // Kurumsal sipariş ödemesi (sepet kimliği "corp-" ön ekli)
   if (conv.startsWith("corp-")) {
     const corpId = conv.slice(5);
+    const detailUrl = `${siteUrl}/portal/siparisler/${corpId}`;
+
     if (!paid) {
-      return NextResponse.redirect(`${siteUrl}/portal/siparisler/${corpId}?odeme=basarisiz`, 303);
+      const { data: failedRows } = await admin
+        .from("corporate_orders")
+        .update({ status: "payment_failed", updated_at: new Date().toISOString() })
+        .eq("id", corpId)
+        .in("status", UNPAID_ORDER_STATUSES)
+        .select("id");
+      if (failedRows?.length) {
+        await admin.from("order_events").insert({
+          order_id: corpId,
+          order_type: "corporate",
+          event_type: "status_change",
+          new_status: "payment_failed",
+          note: `Ödeme başarısız${result.errorMessage ? ": " + result.errorMessage : ""}`,
+        });
+      }
+      return NextResponse.redirect(`${detailUrl}?odeme=basarisiz`, 303);
     }
-    await admin
+
+    // Yalnızca ödeme bekleyen sipariş güncellenir — aynı dönüş tekrar gelirse e-postalar yinelenmez.
+    const { data: paidRows } = await admin
       .from("corporate_orders")
       .update({ status: "approved", updated_at: new Date().toISOString() })
-      .eq("id", corpId);
-    await admin.from("order_events").insert({
-      order_id: corpId,
-      order_type: "corporate",
-      event_type: "status_change",
-      new_status: "approved",
-      note: "Ödeme alındı",
-    });
-    return NextResponse.redirect(`${siteUrl}/portal/siparisler/${corpId}?odeme=basarili`, 303);
+      .eq("id", corpId)
+      .in("status", UNPAID_ORDER_STATUSES)
+      .select("template, recipient_name, address_text, city, delivery_date, budget, note, companies(name, email, contact_name)");
+    const o = paidRows?.[0];
+    if (o) {
+      const amount = Number(o.budget) || 0;
+      await admin.from("order_events").insert({
+        order_id: corpId,
+        order_type: "corporate",
+        event_type: "status_change",
+        new_status: "approved",
+        note: `Ödeme alındı · ${amount.toLocaleString("tr-TR")} ₺ (iyzico ödeme ${result.paymentId || "—"})`,
+      });
+      const company = (o.companies as unknown as { name?: string; email?: string; contact_name?: string } | null) || {};
+      try {
+        await Promise.all([
+          sendMail({
+            to: GAIA_NOTIFY_EMAIL,
+            subject: `Yeni kurumsal sipariş (ödendi): ${company.name || "Firma"}`,
+            react: YeniSiparisEmail({
+              data: {
+                company: company.name || "—",
+                type: o.template || "—",
+                recipient: o.recipient_name || "—",
+                address: [o.address_text, o.city].filter(Boolean).join(", ") || "—",
+                deliveryDate: o.delivery_date || "—",
+                budget: amount,
+                requiresApproval: false,
+                note: o.note || "",
+              },
+            }),
+          }),
+          ...(company.email
+            ? [sendMail({
+                to: company.email,
+                subject: "Ödemeniz alındı — GAIA Çiçeğe Dair",
+                react: SiparisDurumuEmail({
+                  recipientName: company.contact_name || company.name || "Müşterimiz",
+                  orderType: o.template || "Kurumsal sipariş",
+                  status: "paid",
+                }),
+              })]
+            : []),
+        ]);
+      } catch (err) {
+        console.error("[odeme/callback] kurumsal e-posta hatası:", err);
+      }
+    }
+    return NextResponse.redirect(`${detailUrl}?odeme=basarili`, 303);
   }
 
   const orderId = conv;
 
   if (!paid) {
-    await admin.from("b2c_orders").update({ status: "failed" }).eq("id", orderId);
+    await admin.from("b2c_orders").update({ status: "failed" }).eq("id", orderId).eq("status", "pending");
     return NextResponse.redirect(`${siteUrl}/ozel-gunlerim?odeme=basarisiz`, 303);
   }
 
-  await admin
+  // Yalnızca bekleyen sipariş ödendi yapılır — aynı dönüş tekrar gelirse e-postalar yinelenmez.
+  const { data: paidRows } = await admin
     .from("b2c_orders")
     .update({
       status: "paid",
       payment_id: result.paymentId || null,
       paid_at: new Date().toISOString(),
     })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .eq("status", "pending")
+    .select("id");
+  const firstTime = Boolean(paidRows?.length);
 
   const { data: order } = await admin
     .from("b2c_orders")
@@ -79,7 +145,7 @@ export async function POST(req: Request) {
     .eq("id", orderId)
     .single();
 
-  await admin.from("order_events").insert({
+  if (firstTime) await admin.from("order_events").insert({
     order_id: orderId,
     order_type: "b2c",
     event_type: "status_change",
@@ -88,7 +154,7 @@ export async function POST(req: Request) {
     note: "Ödeme alındı",
   });
 
-  if (order) {
+  if (order && firstTime) {
     try {
       const items = order.b2c_order_items || [];
       const customerMail = order.buyer_email

@@ -9,7 +9,7 @@ import {
   PortalCard, PortalButton, PortalInput, PortalTextarea, PortalSelect, StatusBadge,
   fmtTL, fmtDate,
 } from '@/components/portal/ui';
-import { type PortalState } from '@/lib/portal-data';
+import { type PortalState, UNPAID_ORDER_STATUSES } from '@/lib/portal-data';
 import { PHOTOS } from '@/components/site/images';
 
 export function PortalOrders({ state }: { state: PortalState }) {
@@ -31,8 +31,30 @@ export function PortalOrders({ state }: { state: PortalState }) {
     { id: 'delivered',  label: 'Teslim',     n: orders.filter(o => o.status === 'delivered').length },
   ];
 
+  const unpaid = state.unpaidOrders || [];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {unpaid.length > 0 && (
+        <PortalCard padding={18} style={{ background: '#FFF4E5', border: 'none' }}>
+          <div style={{ fontSize: 13.5, fontWeight: 500, color: '#995200', marginBottom: 10 }}>
+            Ödemesi tamamlanmamış {unpaid.length} sipariş — ödeme alınana kadar GAIA ekibine iletilmez.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {unpaid.map(u => (
+              <Link key={u.id} href={'/portal/siparisler/' + u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'rgba(255,255,255,0.7)', borderRadius: 6, color: 'var(--ink)', textDecoration: 'none', fontSize: 13.5 }}>
+                <span>{u.type} · {u.recipient} · {fmtDate(u.date)}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <strong>{fmtTL(u.amount)}</strong>
+                  <StatusBadge status={u.status} size="sm" />
+                  <span style={{ color: 'var(--accent)', fontWeight: 500 }}>Öde →</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </PortalCard>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           {tabs.map(t => (
@@ -158,7 +180,9 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error || 'Sipariş oluşturulamadı.');
+        setError(json.id
+          ? `${json.error || 'Ödeme başlatılamadı.'} Siparişiniz kaydedildi; Siparişler sayfasından ödemeyi tekrar deneyebilirsiniz.`
+          : (json.error || 'Sipariş oluşturulamadı.'));
         return;
       }
       if (json.paymentPageUrl) {
@@ -437,8 +461,37 @@ function fmtDateTime(iso: string) {
 
 export function PortalOrderDetail({ orderId, state }: { orderId: string; state: PortalState }) {
   const router = useRouter();
-  const o = (state.orders || []).find(x => x.id === orderId);
+  const o = [...(state.orders || []), ...(state.unpaidOrders || [])].find(x => x.id === orderId);
   const [events, setEvents] = useState<OrderEvent[] | null>(null);
+  const [payResult, setPayResult] = useState<'basarili' | 'basarisiz' | null>(null);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState('');
+
+  useEffect(() => {
+    const odeme = new URLSearchParams(window.location.search).get('odeme');
+    if (odeme === 'basarili' || odeme === 'basarisiz') {
+      setPayResult(odeme);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  const retryPayment = async () => {
+    setPaying(true);
+    setPayError('');
+    try {
+      const res = await fetch('/api/portal/siparis/odeme', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: orderId }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json.paymentPageUrl) { window.location.href = json.paymentPageUrl; return; }
+      setPayError(json.error || 'Ödeme başlatılamadı.');
+    } catch {
+      setPayError('Bağlantı hatası. Lütfen tekrar deneyin.');
+    }
+    setPaying(false);
+  };
 
   useEffect(() => {
     let active = true;
@@ -456,6 +509,28 @@ export function PortalOrderDetail({ orderId, state }: { orderId: string; state: 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <Link href="/portal/siparisler" style={{ fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-60)', cursor: 'pointer', textDecoration: 'none' }}>← Siparişler</Link>
       </div>
+
+      {payResult === 'basarili' && !UNPAID_ORDER_STATUSES.includes(o.status) && (
+        <div style={{ padding: '14px 18px', borderRadius: 6, background: 'var(--accent-soft)', color: 'var(--accent-deep)', fontSize: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Icons.Check size={16} /> Ödemeniz alındı, siparişiniz üretim planına eklendi. Onay e-postası adresinize gönderildi.
+        </div>
+      )}
+
+      {UNPAID_ORDER_STATUSES.includes(o.status) && (
+        <PortalCard padding={20} style={{ background: o.status === 'payment_failed' || payResult === 'basarisiz' ? '#FBE5E5' : '#FFF4E5', border: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 14, color: o.status === 'payment_failed' || payResult === 'basarisiz' ? '#8B2424' : '#995200', lineHeight: 1.5 }}>
+              {o.status === 'payment_failed' || payResult === 'basarisiz'
+                ? 'Ödeme tamamlanamadı, kartınızdan çekim yapılmadı. Bilgileri kontrol edip tekrar deneyebilirsiniz.'
+                : 'Bu siparişin ödemesi henüz tamamlanmadı. Ödeme alınana kadar sipariş GAIA ekibine iletilmez.'}
+              {payError && <div style={{ marginTop: 6, fontWeight: 500 }}>{payError}</div>}
+            </div>
+            <PortalButton variant="primary" onClick={retryPayment} disabled={paying} iconRight={<Icons.Arrow size={14} />}>
+              {paying ? 'Yönlendiriliyor…' : `Ödemeyi Tamamla · ${fmtTL(o.amount)}`}
+            </PortalButton>
+          </div>
+        </PortalCard>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
         <div>

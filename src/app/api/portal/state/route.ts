@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import type { PortalState } from "@/lib/portal-data";
+import { UNPAID_ORDER_STATUSES, type PortalState } from "@/lib/portal-data";
 import {
   mapOrder,
   orderToEvent,
@@ -93,10 +93,14 @@ export async function GET() {
     b2cOrders = (b2cRows || []).map(mapB2COrder);
   }
 
-  const orders = (orderRows || []).map(mapOrder);
-  const events = (orderRows || [])
+  // Ödemesi tamamlanmamış siparişler liste, takvim, Kanban ve bütçe hesaplarına girmez.
+  const isUnpaid = (o: { status: string | null }) => UNPAID_ORDER_STATUSES.includes(o.status || "");
+  const paidRows = (orderRows || []).filter((o) => !isUnpaid(o));
+  const orders = paidRows.map(mapOrder);
+  const events = paidRows
     .filter((o) => o.delivery_date)
     .map(orderToEvent);
+  const unpaidOrders = isAdmin ? [] : (orderRows || []).filter(isUnpaid).map(mapOrder);
 
   const state: PortalState = {
     auth: {
@@ -112,6 +116,7 @@ export async function GET() {
     employees,
     pending,
     b2cOrders,
+    unpaidOrders,
   };
 
   return NextResponse.json(state);

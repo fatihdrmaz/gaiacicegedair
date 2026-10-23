@@ -36,6 +36,8 @@ const STATUS_MAP: Record<string, PortalOrder["status"]> = {
   delivered: "delivered",
   rejected: "rejected",
   draft: "draft",
+  awaiting_payment: "awaiting_payment",
+  payment_failed: "payment_failed",
 };
 
 export function mapStatus(s: string | null): PortalOrder["status"] {

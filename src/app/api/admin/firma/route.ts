@@ -47,7 +47,7 @@ export async function GET(req: Request) {
         .from("company_products")
         .select("id, price, product_id, products(name, description)")
         .eq("company_id", id),
-      admin.from("corporate_orders").select(ORDER_SELECT).eq("company_id", id).order("delivery_date", { ascending: false }),
+      admin.from("corporate_orders").select(ORDER_SELECT).eq("company_id", id).not("status", "in", "(awaiting_payment,payment_failed)").order("delivery_date", { ascending: false }),
     ]);
 
   if (!company) return NextResponse.json({ error: "Firma bulunamadı" }, { status: 404 });

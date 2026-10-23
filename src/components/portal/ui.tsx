@@ -88,6 +88,8 @@ export function StatusBadge({ status, size = 'md' }: { status: string; size?: 's
     'delivered':  { bg: 'var(--accent-soft)', fg: 'var(--accent-deep)', label: 'Teslim ✓' },
     'rejected':   { bg: '#FBE5E5', fg: '#8B2424', label: 'Reddedildi' },
     'draft':      { bg: '#EEEEEE', fg: '#555555', label: 'Taslak' },
+    'awaiting_payment': { bg: '#FFF4E5', fg: '#995200', label: 'Ödeme bekleniyor' },
+    'payment_failed':   { bg: '#FBE5E5', fg: '#8B2424', label: 'Ödeme başarısız' },
   };
   const c = map[status] || map.pending;
   const sz = size === 'sm' ? { padding: '3px 9px', fontSize: 10 } : { padding: '5px 12px', fontSize: 11 };

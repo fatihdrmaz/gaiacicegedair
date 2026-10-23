@@ -18,6 +18,10 @@ const container = {
 };
 
 const STATUS_TEXT: Record<string, { title: string; body: string }> = {
+  paid: {
+    title: "Ödemeniz alındı",
+    body: "Kart ödemeniz alındı ve siparişiniz üretim planına eklendi. Siparişin durumunu kurumsal panelinizden takip edebilirsiniz.",
+  },
   approved: {
     title: "Siparişiniz onaylandı",
     body: "Talebiniz GAIA ekibi tarafından onaylandı ve üretim planına alındı.",
@@ -35,7 +39,7 @@ export function SiparisDurumuEmail({
 }: {
   recipientName: string;
   orderType: string;
-  status: "approved" | "delivered";
+  status: "paid" | "approved" | "delivered";
 }) {
   const t = STATUS_TEXT[status];
   return (

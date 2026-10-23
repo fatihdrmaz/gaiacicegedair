@@ -8,7 +8,7 @@ export type PortalOrder = {
   addr: string;
   date: string;
   amount: number;
-  status: 'pending' | 'approved' | 'production' | 'shipping' | 'delivered' | 'rejected' | 'draft';
+  status: 'pending' | 'approved' | 'production' | 'shipping' | 'delivered' | 'rejected' | 'draft' | 'awaiting_payment' | 'payment_failed';
   template: string;
   notes: string;
   palette?: string;
@@ -106,7 +106,11 @@ export type PortalState = {
   employees: PortalEmployee[];
   pending: PortalPending[];
   b2cOrders: B2COrder[];
+  // Firma kullanıcısının ödemesi tamamlanmamış kurumsal siparişleri (liste/bütçe hesaplarına girmez)
+  unpaidOrders?: PortalOrder[];
 };
+
+export const UNPAID_ORDER_STATUSES = ['awaiting_payment', 'payment_failed'];
 
 export function mockOrders(): PortalOrder[] {
   return [

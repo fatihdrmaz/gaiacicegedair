@@ -6,7 +6,8 @@ import { sendMail, GAIA_NOTIFY_EMAIL } from "@/lib/resend";
 import { YeniSiparisEmail } from "@/emails/yeni-siparis";
 import { SiparisDurumuEmail } from "@/emails/siparis-durumu";
 import { TEMPLATE_LABELS } from "@/lib/portal-map";
-import { initCheckoutForm, iyzicoConfigured, clientIp } from "@/lib/iyzico";
+import { iyzicoConfigured } from "@/lib/iyzico";
+import { startCorporateCheckout } from "@/lib/corporate-checkout";
 
 const createSchema = z.object({
   productId: z.string().uuid("Ürün seçilmedi"),
@@ -112,9 +113,10 @@ export async function POST(req: Request) {
       note: d.note || null,
       budget: price,
       requires_approval: false,
-      status: "pending",
+      // Kartla ödenen siparişler ödeme gelene kadar listelere/Kanban'a girmez
+      status: iyzicoConfigured ? "awaiting_payment" : "pending",
     })
-    .select("id")
+    .select("id, template, address_text, city, budget")
     .single();
 
   if (error || !order) {
@@ -126,65 +128,43 @@ export async function POST(req: Request) {
     order_id: order.id,
     order_type: "corporate",
     event_type: "status_change",
-    new_status: "pending",
-    note: "Sipariş oluşturuldu",
+    new_status: iyzicoConfigured ? "awaiting_payment" : "pending",
+    note: iyzicoConfigured ? "Sipariş oluşturuldu, ödeme bekleniyor" : "Sipariş oluşturuldu",
     created_by: user.id,
   });
 
-  try {
-    await sendMail({
-      to: GAIA_NOTIFY_EMAIL,
-      subject: `Yeni kurumsal sipariş: ${company.name}`,
-      react: YeniSiparisEmail({
-        data: {
-          company: company.name || "—",
-          type: productName,
-          recipient: d.recipient,
-          address: `${d.addr}, ${d.city}`,
-          deliveryDate: d.date,
-          budget: price,
-          requiresApproval: false,
-          note: d.note,
-        },
-      }),
-    });
-  } catch (err) {
-    console.error("[portal/siparis] e-posta hatası:", err);
-  }
-
-  // Kredi kartı ödemesi — iyzico checkout
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gaiacicegedair.com";
+  // Kartla ödemede GAIA bildirimi ödeme alınınca (odeme/callback) gönderilir.
   if (!iyzicoConfigured) {
+    try {
+      await sendMail({
+        to: GAIA_NOTIFY_EMAIL,
+        subject: `Yeni kurumsal sipariş: ${company.name}`,
+        react: YeniSiparisEmail({
+          data: {
+            company: company.name || "—",
+            type: productName,
+            recipient: d.recipient,
+            address: `${d.addr}, ${d.city}`,
+            deliveryDate: d.date,
+            budget: price,
+            requiresApproval: false,
+            note: d.note,
+          },
+        }),
+      });
+    } catch (err) {
+      console.error("[portal/siparis] e-posta hatası:", err);
+    }
     // iyzico anahtarı yok — geliştirme modu, sipariş oluşturuldu kabul edilir
     return NextResponse.json({ ok: true, id: order.id, devMode: true });
   }
   try {
-    const result = await initCheckoutForm({
-      orderId: `corp-${order.id}`,
-      total: price,
-      callbackUrl: `${siteUrl}/api/odeme/callback`,
-      ip: clientIp(req),
-      buyer: {
-        id: company.id,
-        name: (company.contact_name || "GAIA").split(" ")[0] || "GAIA",
-        surname: (company.contact_name || "Müşteri").split(" ").slice(1).join(" ") || "Müşteri",
-        email: company.email || "siparis@gaiacicegedair.com",
-        phone: company.phone || "+905555555555",
-        address: `${d.addr || ""} ${d.city || "İstanbul"}`.trim(),
-        city: d.city || "İstanbul",
-      },
-      basketItems: [{ id: order.id, name: productName, price }],
-    });
-    if (result.status !== "success" || !result.paymentPageUrl) {
-      return NextResponse.json(
-        { error: result.errorMessage || "Ödeme başlatılamadı" },
-        { status: 502 },
-      );
-    }
-    return NextResponse.json({ ok: true, id: order.id, paymentPageUrl: result.paymentPageUrl });
+    const r = await startCorporateCheckout(req, order, company);
+    if ("error" in r) return NextResponse.json({ error: r.error, id: order.id }, { status: 502 });
+    return NextResponse.json({ ok: true, id: order.id, paymentPageUrl: r.paymentPageUrl });
   } catch (err) {
     console.error("[portal/siparis] iyzico hatası:", err);
-    return NextResponse.json({ error: "Ödeme sağlayıcısına ulaşılamadı" }, { status: 502 });
+    return NextResponse.json({ error: "Ödeme sağlayıcısına ulaşılamadı", id: order.id }, { status: 502 });
   }
 }
 
