@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { initCheckoutForm, iyzicoConfigured } from "@/lib/iyzico";
+import { initCheckoutForm, iyzicoConfigured, clientIp } from "@/lib/iyzico";
 
 const PACKAGE_PRICES: Record<string, number> = {
   mini: 450,
@@ -129,12 +129,13 @@ export async function POST(req: Request) {
       orderId: order.id,
       total,
       callbackUrl: `${siteUrl}/api/odeme/callback`,
+      ip: clientIp(req),
       buyer: {
         id: userId || order.id,
         name: buyerName.split(" ")[0] || "GAIA",
         surname: buyerName.split(" ").slice(1).join(" ") || "Müşteri",
         email: buyerEmail,
-        phone: "+905555555555",
+        phone: buyer.phone,
         address: items[0]?.address || "İstanbul",
         city: "İstanbul",
       },

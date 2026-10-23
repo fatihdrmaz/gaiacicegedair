@@ -6,7 +6,7 @@ import { sendMail, GAIA_NOTIFY_EMAIL } from "@/lib/resend";
 import { YeniSiparisEmail } from "@/emails/yeni-siparis";
 import { SiparisDurumuEmail } from "@/emails/siparis-durumu";
 import { TEMPLATE_LABELS } from "@/lib/portal-map";
-import { initCheckoutForm, iyzicoConfigured } from "@/lib/iyzico";
+import { initCheckoutForm, iyzicoConfigured, clientIp } from "@/lib/iyzico";
 
 const createSchema = z.object({
   productId: z.string().uuid("Ürün seçilmedi"),
@@ -163,6 +163,7 @@ export async function POST(req: Request) {
       orderId: `corp-${order.id}`,
       total: price,
       callbackUrl: `${siteUrl}/api/odeme/callback`,
+      ip: clientIp(req),
       buyer: {
         id: company.id,
         name: (company.contact_name || "GAIA").split(" ")[0] || "GAIA",

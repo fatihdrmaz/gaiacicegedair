@@ -24,6 +24,7 @@ export type CheckoutInput = {
   orderId: string;
   total: number;
   callbackUrl: string;
+  ip?: string;
   buyer: {
     id: string;
     name: string;
@@ -44,6 +45,19 @@ type CheckoutResult = {
   errorMessage?: string;
 };
 
+function normalizePhone(raw: string): string {
+  const digits = (raw || "").replace(/\D/g, "");
+  if (digits.length === 10) return "+90" + digits;
+  if (digits.length === 11 && digits.startsWith("0")) return "+9" + digits;
+  if (digits.length === 12 && digits.startsWith("90")) return "+" + digits;
+  return raw || "+905555555555";
+}
+
+export function clientIp(req: Request): string | undefined {
+  const fwd = req.headers.get("x-forwarded-for");
+  return fwd?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || undefined;
+}
+
 export function initCheckoutForm(input: CheckoutInput): Promise<CheckoutResult> {
   const iyzipay = client();
   const price = input.total.toFixed(2);
@@ -63,9 +77,10 @@ export function initCheckoutForm(input: CheckoutInput): Promise<CheckoutResult> 
       id: buyer.id,
       name: buyer.name,
       surname: buyer.surname,
-      gsmNumber: buyer.phone,
+      gsmNumber: normalizePhone(buyer.phone),
       email: buyer.email,
       identityNumber: "11111111111",
+      ip: input.ip || "85.34.78.112",
       registrationAddress: buyer.address,
       city: buyer.city,
       country: "Turkey",
