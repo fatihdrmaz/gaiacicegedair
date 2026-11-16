@@ -60,15 +60,27 @@ export function PortalPageShell({
   const activeOrders = state.orders.filter(
     (o) => !['delivered', 'rejected'].includes(o.status),
   ).length;
-  const activeB2C = state.b2cOrders.filter(
-    (o) => !['delivered', 'refunded', 'failed', 'pending'].includes(o.status),
+  // Kanban ve Özel Günler rozetleri yalnızca bugünden itibaren 7 gün içindeki teslimatları sayar
+  const today = new Date();
+  const fromIso = today.toISOString().slice(0, 10);
+  const toIso = new Date(today.getTime() + 7 * 86400000).toISOString().slice(0, 10);
+  const inNextWeek = (d: string) => !!d && d >= fromIso && d <= toIso;
+
+  const weekCorporate = state.orders.filter(
+    (o) => !['delivered', 'rejected'].includes(o.status) && inNextWeek(o.date),
   ).length;
+  const weekB2C = state.b2cOrders
+    .filter((o) => !['refunded', 'failed', 'pending'].includes(o.status))
+    .flatMap((o) => o.items)
+    .filter((it) => !['delivered', 'refunded'].includes(it.status) && inNextWeek(it.eventDate)).length;
 
   const badges: Record<string, number> = {
     orders: activeOrders,
     'admin-pending': state.pending.length,
-    'admin-kanban': activeOrders,
-    'admin-b2c': activeB2C,
+    'admin-quotes': state.counts?.newQuotes || 0,
+    'admin-messages': state.counts?.newMessages || 0,
+    'admin-kanban': weekCorporate,
+    'admin-b2c': weekB2C,
   };
 
   return (

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PortalCard, PortalButton, PortalInput, PortalTextarea, fmtTL } from '@/components/portal/ui';
 import { Icons } from '@/components/shared/icons';
+import { createClient } from '@/lib/supabase/client';
 
 type Product = {
   id: string;
@@ -10,6 +11,7 @@ type Product = {
   description: string | null;
   base_price: number;
   active: boolean;
+  image_url?: string | null;
 };
 
 export function PortalAdminProducts() {
@@ -83,6 +85,39 @@ export function PortalAdminProducts() {
     } catch { /* yoksay */ } finally { setBusy(''); }
   };
 
+  const setImage = async (p: Product, file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setError('Lütfen bir görsel dosyası seçin.'); return; }
+    if (file.size > 10 * 1024 * 1024) { setError('Görsel 10MB sınırını aşıyor.'); return; }
+    setBusy(p.id); setError('');
+    try {
+      const supabase = createClient();
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `urunler/${p.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('galeri').upload(path, file, { upsert: false });
+      if (upErr) { setError('Yükleme hatası: ' + upErr.message); return; }
+      const { data: pub } = supabase.storage.from('galeri').getPublicUrl(path);
+      const res = await fetch('/api/admin/urun', {
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: p.id, imageUrl: pub.publicUrl }),
+      });
+      if (!res.ok) { setError('Fotoğraf kaydedilemedi.'); return; }
+      load();
+    } catch { setError('Yükleme sırasında bir hata oluştu.'); } finally { setBusy(''); }
+  };
+
+  const clearImage = async (p: Product) => {
+    if (!window.confirm('Ürün fotoğrafı kaldırılsın mı?')) return;
+    setBusy(p.id);
+    try {
+      const res = await fetch('/api/admin/urun', {
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: p.id, imageUrl: null }),
+      });
+      if (res.ok) load(); else setError('Fotoğraf kaldırılamadı.');
+    } catch { setError('Bağlantı hatası.'); } finally { setBusy(''); }
+  };
+
   const remove = async (id: string) => {
     if (!window.confirm('Ürün silinsin mi? Firmalardaki atamaları da kalkar.')) return;
     setBusy(id);
@@ -111,7 +146,8 @@ export function PortalAdminProducts() {
             <PortalTextarea label="Açıklama" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} />
           </div>
         </div>
-        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12.5, color: 'var(--ink-60)' }}>Fotoğrafı, ürünü ekledikten sonra ürün kartından yükleyebilirsiniz.</span>
           <PortalButton variant="primary" onClick={add} disabled={busy === 'new'}>
             {busy === 'new' ? 'Ekleniyor…' : 'Ürün Ekle'}
           </PortalButton>
@@ -141,8 +177,23 @@ export function PortalAdminProducts() {
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-              <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ width: 96, flexShrink: 0 }}>
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.name} style={{ width: 96, height: 72, objectFit: 'cover', borderRadius: 6, display: 'block' }} />
+                ) : (
+                  <div style={{ width: 96, height: 72, borderRadius: 6, background: 'var(--paper-warm)', border: '1px dashed var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-40)', fontSize: 11 }}>Fotoğraf yok</div>
+                )}
+                <label style={{ display: 'block', marginTop: 6, fontSize: 11.5, color: 'var(--accent)', cursor: busy === p.id ? 'wait' : 'pointer', textAlign: 'center' }}>
+                  {busy === p.id ? 'Yükleniyor…' : p.image_url ? 'Değiştir' : 'Fotoğraf yükle'}
+                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={busy === p.id}
+                    onChange={e => { setImage(p, e.target.files?.[0] || null); e.target.value = ''; }} />
+                </label>
+                {p.image_url && (
+                  <button onClick={() => clearImage(p)} disabled={busy === p.id} style={{ display: 'block', width: '100%', marginTop: 2, fontSize: 11, color: 'var(--ink-40)', background: 'none', border: 'none', cursor: 'pointer' }}>Kaldır</button>
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 180 }}>
                 <div style={{ fontSize: 15, fontWeight: 500 }}>
                   {p.name}
                   {!p.active && <span style={{ marginLeft: 8, fontSize: 11, color: '#995200' }}>(pasif)</span>}

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { initCheckoutForm, iyzicoConfigured, clientIp } from "@/lib/iyzico";
 import { loadPackages } from "@/lib/b2c-packages-server";
+import { dayStep1Errors, dayStep2Errors } from "@/lib/b2c-rules";
 
 const daySchema = z.object({
   name: z.string().optional().default(""),
@@ -42,6 +43,11 @@ export async function POST(req: Request) {
     );
   }
   const { days, buyer } = parsed.data;
+
+  for (const [i, d] of days.entries()) {
+    const msg = Object.values({ ...dayStep1Errors(d), ...dayStep2Errors(d) })[0];
+    if (msg) return NextResponse.json({ error: `${i + 1}. özel gün: ${msg}` }, { status: 422 });
+  }
 
   // Fiyatlar sunucuda hesaplanır — istemciden gelen total'a güvenilmez.
   const packages = new Map((await loadPackages()).map((p) => [p.id, p]));

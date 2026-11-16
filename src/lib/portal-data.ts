@@ -108,6 +108,8 @@ export type PortalState = {
   b2cOrders: B2COrder[];
   // Firma kullanıcısının ödemesi tamamlanmamış kurumsal siparişleri (liste/bütçe hesaplarına girmez)
   unpaidOrders?: PortalOrder[];
+  // Admin menü rozetleri için yeni (işlenmemiş) kayıt sayıları
+  counts?: { newMessages: number; newQuotes: number };
 };
 
 export const UNPAID_ORDER_STATUSES = ['awaiting_payment', 'payment_failed'];

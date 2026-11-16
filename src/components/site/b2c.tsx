@@ -5,6 +5,21 @@ import Link from 'next/link';
 import { Button, Field, Input, Select, TextArea } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
 import type { B2CPackage } from '@/lib/b2c-packages';
+import { dateBounds, dayStep1Errors, dayStep2Errors, formatTr } from '@/lib/b2c-rules';
+
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return <span style={{ fontSize: 12, color: '#b42318', marginTop: 4 }}>{msg}</span>;
+}
+
+function StepErrorNote({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <div style={{ marginTop: 20, padding: '10px 14px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 13 }}>
+      Devam etmek için işaretli alanları doldurun.
+    </div>
+  );
+}
 
 
 export const OCCASIONS = [
@@ -122,12 +137,20 @@ export function B2CPage() {
 }
 
 export function B2CStep1({ days, addDay, removeDay, updateDay, onNext }: { days: Day[]; addDay: () => void; removeDay: (id: number) => void; updateDay: (id: number, patch: Partial<Day>) => void; onNext: () => void }) {
+  const [showErrors, setShowErrors] = useState(false);
+  const { min, max } = dateBounds();
+  const errors = Object.fromEntries(days.map(d => [d.id, dayStep1Errors(d)]));
+  const hasErrors = Object.values(errors).some(e => Object.keys(e).length > 0);
+  const next = () => {
+    if (hasErrors) { setShowErrors(true); return; }
+    onNext();
+  };
   return (
     <div>
       <h2 className="serif" style={{ fontSize: 30, marginBottom: 10, fontWeight: 400 }}>Özel günlerini ekle</h2>
       <p style={{ color: 'var(--ink-60)', marginBottom: 14 }}>Yıl boyunca hatırlamak istediğin günleri bir kerede gir.</p>
       <div style={{ marginBottom: 30, padding: '10px 14px', background: 'var(--accent-soft)', color: 'var(--accent-deep)', borderRadius: 6, fontSize: 13 }}>
-        ℹ Teslimat yalnızca <strong>İstanbul içinde</strong> geçerlidir. Tarih, en erken bugünden 2 gün sonrası seçilebilir.
+        ℹ Teslimat yalnızca <strong>İstanbul içinde</strong> geçerlidir. Tarih en erken <strong>{formatTr(min)}</strong> seçilebilir.
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {days.map((d, i) => (
@@ -138,8 +161,8 @@ export function B2CStep1({ days, addDay, removeDay, updateDay, onNext }: { days:
             <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icons.Calendar size={20} />
             </div>
-            <Field label="Özel Günü Adlandırın"><Input value={d.name} onChange={(e: any) => updateDay(d.id, { name: e.target.value })} placeholder="Örn: Annemin Doğum Günü" /></Field>
-            <Field label="Tarih"><Input type="date" min={new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10)} max={new Date(Date.now() + 367 * 86400000).toISOString().slice(0, 10)} value={d.date} onChange={(e: any) => updateDay(d.id, { date: e.target.value })} /></Field>
+            <Field label="Özel Günü Adlandırın" required><Input value={d.name} onChange={(e: any) => updateDay(d.id, { name: e.target.value })} placeholder="Örn: Annemin Doğum Günü" /><FieldError msg={showErrors ? errors[d.id].name : undefined} /></Field>
+            <Field label="Tarih" required><Input type="date" min={min} max={max} value={d.date} onChange={(e: any) => updateDay(d.id, { date: e.target.value })} /><FieldError msg={showErrors ? errors[d.id].date : undefined} /></Field>
             <Field label="Gönderim Nedeni"><Select value={d.occasion} onChange={(e: any) => updateDay(d.id, { occasion: e.target.value })} options={['Doğum Günü','Yıl Dönümü','Anneler Günü','Babalar Günü','Sevgililer Günü','Teşekkür','Diğer']} /></Field>
             {days.length > 1 && (
               <button onClick={() => removeDay(d.id)} style={{ color: 'var(--ink-40)', padding: 8 }}>
@@ -158,8 +181,9 @@ export function B2CStep1({ days, addDay, removeDay, updateDay, onNext }: { days:
         <Icons.Plus size={16} /> Bir Gün Daha Ekle
       </button>
 
+      <StepErrorNote show={showErrors && hasErrors} />
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 40 }}>
-        <Button variant="primary" size="lg" onClick={onNext} iconRight={<Icons.Arrow size={14} />}>Devam Et</Button>
+        <Button variant="primary" size="lg" onClick={next} iconRight={<Icons.Arrow size={14} />}>Devam Et</Button>
       </div>
 
       <style>{`@media (max-width: 800px){ .b2c-row { grid-template-columns: 1fr !important; gap: 14px !important; } }`}</style>
@@ -169,6 +193,13 @@ export function B2CStep1({ days, addDay, removeDay, updateDay, onNext }: { days:
 
 export function B2CStep2({ days, updateDay, onBack, onNext }: { days: Day[]; updateDay: (id: number, patch: Partial<Day>) => void; onBack: () => void; onNext: () => void }) {
   const concepts = ['Romantik','Klasik','Modern','Minimalist','Vintage','Renkli','Pastel','Lüks'];
+  const [showErrors, setShowErrors] = useState(false);
+  const errors = Object.fromEntries(days.map(d => [d.id, dayStep2Errors(d)]));
+  const hasErrors = Object.values(errors).some(e => Object.keys(e).length > 0);
+  const next = () => {
+    if (hasErrors) { setShowErrors(true); return; }
+    onNext();
+  };
   return (
     <div>
       <h2 className="serif" style={{ fontSize: 30, marginBottom: 10, fontWeight: 400 }}>Her gün için detaylar</h2>
@@ -190,12 +221,15 @@ export function B2CStep2({ days, updateDay, onBack, onNext }: { days: Day[]; upd
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }} className="form-grid">
               <Field label="Kime gidecek?" required>
                 <Input value={d.recipient} onChange={(e: any) => updateDay(d.id, { recipient: e.target.value })} placeholder="Örn: Ayşe Yılmaz" />
+                <FieldError msg={showErrors ? errors[d.id].recipient : undefined} />
               </Field>
-              <Field label="Teslimat Saati">
+              <Field label="Teslimat Saati" required>
                 <Input type="time" value={d.time} onChange={(e: any) => updateDay(d.id, { time: e.target.value })} />
+                <FieldError msg={showErrors ? errors[d.id].time : undefined} />
               </Field>
-              <Field label="Adres" required span={2}>
-                <Input value={d.address} onChange={(e: any) => updateDay(d.id, { address: e.target.value })} placeholder="Sokak, No, Mahalle, İlçe, Şehir" />
+              <Field label="Adres (İstanbul)" required span={2}>
+                <Input value={d.address} onChange={(e: any) => updateDay(d.id, { address: e.target.value })} placeholder="Mahalle, sokak, no, daire, ilçe" />
+                <FieldError msg={showErrors ? errors[d.id].address : undefined} />
               </Field>
               <Field label="Konsept / Stil" span={2}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -220,8 +254,9 @@ export function B2CStep2({ days, updateDay, onBack, onNext }: { days: Day[]; upd
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 40 }}>
         <Button variant="ghost" onClick={onBack} icon={<Icons.ArrowLeft size={14} />}>Geri</Button>
-        <Button variant="primary" size="lg" onClick={onNext} iconRight={<Icons.Arrow size={14} />}>Paketleri Gör</Button>
+        <Button variant="primary" size="lg" onClick={next} iconRight={<Icons.Arrow size={14} />}>Paketleri Gör</Button>
       </div>
+      <StepErrorNote show={showErrors && hasErrors} />
     </div>
   );
 }

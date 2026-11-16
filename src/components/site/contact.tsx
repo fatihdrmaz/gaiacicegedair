@@ -13,6 +13,10 @@ export function Contact({ full = false }: { full?: boolean }) {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (form.phone.replace(/\D/g, '').length < 10) {
+      setError('Lütfen geçerli bir telefon numarası girin.');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -71,7 +75,7 @@ export function Contact({ full = false }: { full?: boolean }) {
               <form onSubmit={submit} style={{ display: 'grid', gap: 24 }}>
                 <Field label="Ad Soyad"><Input placeholder="Adınız" required value={form.name} onChange={(e: any) => upd('name', e.target.value)} /></Field>
                 <Field label="E-posta"><Input type="email" placeholder="ornek@email.com" required value={form.email} onChange={(e: any) => upd('email', e.target.value)} /></Field>
-                <Field label="Telefon"><Input placeholder="+90" value={form.phone} onChange={(e: any) => upd('phone', e.target.value)} /></Field>
+                <Field label="Telefon" required><Input type="tel" placeholder="+90 5xx xxx xx xx" required value={form.phone} onChange={(e: any) => upd('phone', e.target.value)} /></Field>
                 <Field label="Mesaj"><TextArea placeholder="Nasıl yardımcı olabiliriz?" rows={4} required value={form.message} onChange={(e: any) => upd('message', e.target.value)} /></Field>
                 {error && <div style={{ padding: '10px 14px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 13 }}>{error}</div>}
                 <Button variant="primary" type="submit" size="lg" disabled={submitting} iconRight={<Icons.Arrow size={14} />}>{submitting ? 'Gönderiliyor…' : 'Gönder'}</Button>

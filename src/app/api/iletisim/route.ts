@@ -7,7 +7,7 @@ import { IletisimMesajiEmail } from "@/emails/iletisim-mesaji";
 const schema = z.object({
   name: z.string().min(2, "Ad soyad gerekli"),
   email: z.string().email("Geçerli e-posta gerekli"),
-  phone: z.string().optional().default(""),
+  phone: z.string().trim().refine((v) => v.replace(/\D/g, "").length >= 10, "Geçerli bir telefon numarası girin"),
   message: z.string().min(5, "Mesaj gerekli"),
 });
 

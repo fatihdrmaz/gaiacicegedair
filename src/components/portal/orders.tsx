@@ -141,7 +141,7 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
   const [newId, setNewId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [products, setProducts] = useState<{ id: string; name: string; description: string; price: number }[] | null>(null);
+  const [products, setProducts] = useState<{ id: string; name: string; description: string; price: number; imageUrl: string | null }[] | null>(null);
   const [agreed, setAgreed] = useState(false);
   const update = (k: string, v: any) => setData((d: any) => ({ ...d, [k]: v }));
 
@@ -277,14 +277,16 @@ export function PortalOrderNew({ state }: { state: PortalState }) {
                     style={{
                       padding: 18, textAlign: 'left', background: sel ? 'var(--accent-soft)' : 'var(--paper-warm)',
                       border: '1px solid ' + (sel ? 'var(--accent)' : 'var(--line)'),
-                      borderRadius: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10,
+                      borderRadius: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative',
                     }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    {p.imageUrl ? (
+                      <img src={p.imageUrl} alt={p.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 6, display: 'block' }} />
+                    ) : (
                       <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Icons.Bouquet size={18} />
                       </div>
-                      {sel && <Icons.Check size={18} />}
-                    </div>
+                    )}
+                    {sel && <span style={{ position: 'absolute', top: 12, right: 12, width: 26, height: 26, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icons.Check size={14} /></span>}
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 500 }}>{p.name}</div>
                       {p.description && <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 3 }}>{p.description}</div>}

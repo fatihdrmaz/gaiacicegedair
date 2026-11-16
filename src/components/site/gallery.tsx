@@ -179,11 +179,11 @@ export function Gallery({ data }: { data: GalleryData }) {
 export function FAQ() {
   const qs = [
     { q: 'Ne kadar önceden rezervasyon yapmalıyım?', a: 'Düğün gibi büyük etkinlikler için 3-6 ay önceden, küçük etkinlikler için 2-4 hafta önceden iletişime geçmenizi öneriyoruz. Yoğun sezon (Mayıs-Eylül) için erken rezervasyon önemli.' },
-    { q: 'Hangi şehirlerde hizmet veriyorsunuz?', a: 'Ana atölyemiz İstanbul Beyoğlu\'nda. İstanbul, Ankara, İzmir, Bursa ve Antalya bölgelerinde düzenli olarak hizmet veriyoruz. Diğer şehirler için özel fiyatlandırma yapıyoruz.' },
+    { q: 'Hangi şehirlerde hizmet veriyorsunuz?', a: 'Atölyemiz İstanbul Beyoğlu\'nda; çiçek teslimatı ve organizasyon hizmetlerimizi İstanbul genelinde veriyoruz. İstanbul dışındaki şehirlerde yalnızca düğün, kurumsal etkinlik gibi büyük organizasyonlar için hizmet veriyoruz; ulaşım ve konaklama giderleri teklife dahil edilir.' },
     { q: 'Konsept tasarımı ücretli mi?', a: 'İlk görüşme ve ilham tablosu tamamen ücretsiz. Detaylı konsept dosyası ve teknik çizim gerekiyorsa, paket kapsamına göre değerlendirme yapıyoruz.' },
     { q: 'Kurutulmuş çiçek hediye setleri için minimum sipariş var mı?', a: 'Kurumsal kurutulmuş çiçek hediyeleri için minimum 10 adet sipariş alıyoruz. Butik hediyelerde minimum yok.' },
     { q: 'Özel Günlerim abonelik sistemini nasıl iptal ederim?', a: 'Takviminizdeki ilk siparişinizin gönderim tarihinden 7 gün öncesine kadar iptal edebilir ya da düzenleyebilirsiniz; henüz hazırlığa girmemiş çiçekler için ödemeniz iade edilir.' },
-    { q: 'Son dakika sipariş alıyor musunuz?', a: 'İstanbul içi aynı gün teslimat yapabiliyoruz (siparişe göre). Diğer şehirler için en az 48 saat önceden bilgi almamız gerekir.' },
+    { q: 'Son dakika sipariş alıyor musunuz?', a: 'İstanbul içinde, sipariş detayına bağlı olarak aynı gün teslimat yapabiliyoruz. Büyük organizasyonlar için mümkün olduğunca erken iletişime geçmenizi öneririz.' },
   ];
   const [open, setOpen] = useState(0);
   return (

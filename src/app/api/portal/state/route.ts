@@ -77,6 +77,7 @@ export async function GET() {
 
   let pending: PortalState["pending"] = [];
   let b2cOrders: PortalState["b2cOrders"] = [];
+  let counts: PortalState["counts"];
   if (isAdmin) {
     const [{ data: pendingRows }, { data: b2cRows }] = await Promise.all([
       supabase
@@ -90,6 +91,11 @@ export async function GET() {
         .order("created_at", { ascending: false }),
     ]);
     pending = (pendingRows || []).map(mapPending);
+    const [{ count: newMessages }, { count: newQuotes }] = await Promise.all([
+      supabase.from("contact_messages").select("id", { count: "exact", head: true }).eq("status", "new"),
+      supabase.from("quote_requests").select("id", { count: "exact", head: true }).eq("status", "new"),
+    ]);
+    counts = { newMessages: newMessages || 0, newQuotes: newQuotes || 0 };
     b2cOrders = (b2cRows || []).map(mapB2COrder);
   }
 
@@ -117,6 +123,7 @@ export async function GET() {
     pending,
     b2cOrders,
     unpaidOrders,
+    counts,
   };
 
   return NextResponse.json(state);

@@ -18,13 +18,13 @@ export async function GET() {
 
   const { data } = await supabase
     .from("company_products")
-    .select("price, products(id, name, description, active)")
+    .select("price, products(*)")
     .eq("company_id", company.id);
 
   const products = (data || [])
     .map((r) => {
       const p = r.products as unknown as
-        | { id: string; name: string; description: string | null; active: boolean }
+        | { id: string; name: string; description: string | null; active: boolean; image_url?: string | null }
         | null;
       if (!p || !p.active) return null;
       return {
@@ -32,9 +32,10 @@ export async function GET() {
         name: p.name,
         description: p.description || "",
         price: Number(r.price) || 0,
+        imageUrl: p.image_url || null,
       };
     })
-    .filter((x): x is { id: string; name: string; description: string; price: number } => x !== null);
+    .filter((x): x is { id: string; name: string; description: string; price: number; imageUrl: string | null } => x !== null);
 
   return NextResponse.json({ products });
 }

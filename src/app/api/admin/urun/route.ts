@@ -22,6 +22,7 @@ const createSchema = z.object({
   name: z.string().min(1, "Ürün adı gerekli"),
   description: z.string().optional().default(""),
   basePrice: z.number().optional().default(0),
+  imageUrl: z.string().url().nullable().optional(),
 });
 
 const patchSchema = z.object({
@@ -30,6 +31,7 @@ const patchSchema = z.object({
   description: z.string().optional(),
   basePrice: z.number().optional(),
   active: z.boolean().optional(),
+  imageUrl: z.string().url().nullable().optional(),
 });
 
 export async function GET() {
@@ -56,6 +58,7 @@ export async function POST(req: Request) {
       name: parsed.data.name,
       description: parsed.data.description || null,
       base_price: parsed.data.basePrice,
+      ...(parsed.data.imageUrl ? { image_url: parsed.data.imageUrl } : {}),
     })
     .select("id")
     .single();
@@ -73,12 +76,13 @@ export async function PATCH(req: Request) {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Geçersiz istek" }, { status: 400 }); }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Geçersiz veri" }, { status: 422 });
-  const { id, name, description, basePrice, active } = parsed.data;
+  const { id, name, description, basePrice, active, imageUrl } = parsed.data;
   const patch: Record<string, unknown> = {};
   if (name !== undefined) patch.name = name;
   if (description !== undefined) patch.description = description || null;
   if (basePrice !== undefined) patch.base_price = basePrice;
   if (active !== undefined) patch.active = active;
+  if (imageUrl !== undefined) patch.image_url = imageUrl;
   const admin = createAdminClient();
   const { error } = await admin.from("products").update(patch).eq("id", id);
   if (error) {
