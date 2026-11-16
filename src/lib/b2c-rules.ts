@@ -40,3 +40,19 @@ export function dayStep2Errors(d: Pick<DayFields, 'recipient' | 'address' | 'tim
 export function formatTr(iso: string): string {
   return new Date(iso + 'T12:00:00Z').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
+
+export const CUSTOM_DESIGN_MIN = 10;
+
+export function dayStep3Errors(
+  d: { concept: string; package: string; flowerType: string; designNote: string },
+  valid: { conceptIds: string[]; packageIds: string[]; flowerTypeIds: readonly string[]; customId: string },
+): Record<string, string> {
+  const e: Record<string, string> = {};
+  if (!valid.conceptIds.includes(d.concept)) e.concept = 'Bir konsept seçin';
+  if (!valid.packageIds.includes(d.package)) e.package = 'Bir tasarım ölçeği seçin';
+  if (!valid.flowerTypeIds.includes(d.flowerType)) e.flowerType = 'Çiçek türünü seçin';
+  else if (d.flowerType === valid.customId && d.designNote.trim().length < CUSTOM_DESIGN_MIN) {
+    e.designNote = 'Hayalinizdeki tasarımı birkaç cümleyle anlatın';
+  }
+  return e;
+}

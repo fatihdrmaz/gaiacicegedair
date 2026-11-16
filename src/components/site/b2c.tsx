@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button, Field, Input, Select, TextArea } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
-import type { B2CPackage } from '@/lib/b2c-packages';
-import { dateBounds, dayStep1Errors, dayStep2Errors, formatTr } from '@/lib/b2c-rules';
+import { CUSTOM_FLOWER_TYPE, FLOWER_TYPES, type B2CConcept, type B2CPackage } from '@/lib/b2c-packages';
+import { CUSTOM_DESIGN_MIN, dateBounds, dayStep1Errors, dayStep2Errors, dayStep3Errors, formatTr } from '@/lib/b2c-rules';
 
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
@@ -35,32 +35,26 @@ export const OCCASIONS = [
 type Day = {
   id: number; name: string; date: string; occasion: string;
   recipient: string; address: string; time: string; note: string;
-  concept: string; package: string;
+  concept: string; package: string; flowerType: string; designNote: string;
 };
 
 export function B2CPage() {
   const [step, setStep] = useState(0);
   const [days, setDays] = useState<Day[]>([
-    { id: 1, name: '', date: '', occasion: 'Doğum Günü', recipient: '',  address: '', time: '10:00', note: '', concept: 'Romantik', package: 'orta' },
+    { id: 1, name: '', date: '', occasion: 'Doğum Günü', recipient: '',  address: '', time: '10:00', note: '', concept: '', package: '', flowerType: '', designNote: '' },
   ]);
   const [confirmed, setConfirmed] = useState(false);
   const [paidSummary, setPaidSummary] = useState<{ total: number; days: number } | null>(null);
   const [paymentError, setPaymentError] = useState(false);
   const [packages, setPackages] = useState<B2CPackage[] | null>(null);
+  const [concepts, setConcepts] = useState<B2CConcept[] | null>(null);
 
   useEffect(() => {
     fetch('/api/paketler')
       .then(r => r.json())
-      .then(d => setPackages(d.packages || []))
-      .catch(() => setPackages([]));
+      .then(d => { setPackages(d.packages || []); setConcepts(d.concepts || []); })
+      .catch(() => { setPackages([]); setConcepts([]); });
   }, []);
-
-  // Paketler yüklenince listede olmayan seçimleri varsayılan pakete çek
-  useEffect(() => {
-    if (!packages || packages.length === 0) return;
-    const fallback = (packages.find(p => p.id === 'orta') || packages[0]).id;
-    setDays(ds => ds.map(d => packages.some(p => p.id === d.package) ? d : { ...d, package: fallback }));
-  }, [packages]);
 
   // iyzico ödeme dönüşünde ?odeme=basarili ile gelir
   useEffect(() => {
@@ -77,13 +71,13 @@ export function B2CPage() {
 
   const addDay = () => setDays(ds => [...ds, {
     id: Date.now(), name: '', date: '', occasion: 'Doğum Günü',
-    recipient: '', address: '', time: '10:00', note: '', concept: 'Klasik', package: 'orta',
+    recipient: '', address: '', time: '10:00', note: '', concept: '', package: '', flowerType: '', designNote: '',
   }]);
   const removeDay = (id: number) => setDays(ds => ds.filter(d => d.id !== id));
   const updateDay = (id: number, patch: Partial<Day>) => setDays(ds => ds.map(d => d.id === id ? { ...d, ...patch } : d));
 
   const total = days.reduce((s, d) => s + (packages?.find(p => p.id === d.package)?.price || 0), 0);
-  const steps = ['Özel Günler', 'Detaylar', 'Paketler', 'Özet'];
+  const steps = ['Özel Günler', 'Detaylar', 'Tasarım', 'Özet'];
 
   return (
     <section style={{ paddingTop: 130, paddingBottom: 80, background: 'var(--paper)' }}>
@@ -128,8 +122,8 @@ export function B2CPage() {
         {confirmed ? <B2CConfirm total={paidSummary?.total ?? total} dayCount={paidSummary?.days ?? days.length} onReset={() => { setConfirmed(false); setPaidSummary(null); setStep(0); }} />
           : step === 0 ? <B2CStep1 days={days} addDay={addDay} removeDay={removeDay} updateDay={updateDay} onNext={() => setStep(1)} />
           : step === 1 ? <B2CStep2 days={days} updateDay={updateDay} onBack={() => setStep(0)} onNext={() => setStep(2)} />
-          : step === 2 ? <B2CStep3 packages={packages} days={days} updateDay={updateDay} onBack={() => setStep(1)} onNext={() => setStep(3)} />
-          :              <B2CStep4 packages={packages || []} days={days} total={total} onBack={() => setStep(2)} onConfirm={() => setConfirmed(true)} />
+          : step === 2 ? <B2CStep3 packages={packages} concepts={concepts} days={days} updateDay={updateDay} onBack={() => setStep(1)} onNext={() => setStep(3)} />
+          :              <B2CStep4 packages={packages || []} concepts={concepts || []} days={days} total={total} onBack={() => setStep(2)} onConfirm={() => setConfirmed(true)} />
         }
       </div>
     </section>
@@ -192,7 +186,6 @@ export function B2CStep1({ days, addDay, removeDay, updateDay, onNext }: { days:
 }
 
 export function B2CStep2({ days, updateDay, onBack, onNext }: { days: Day[]; updateDay: (id: number, patch: Partial<Day>) => void; onBack: () => void; onNext: () => void }) {
-  const concepts = ['Romantik','Klasik','Modern','Minimalist','Vintage','Renkli','Pastel','Lüks'];
   const [showErrors, setShowErrors] = useState(false);
   const errors = Object.fromEntries(days.map(d => [d.id, dayStep2Errors(d)]));
   const hasErrors = Object.values(errors).some(e => Object.keys(e).length > 0);
@@ -203,7 +196,7 @@ export function B2CStep2({ days, updateDay, onBack, onNext }: { days: Day[]; upd
   return (
     <div>
       <h2 className="serif" style={{ fontSize: 30, marginBottom: 10, fontWeight: 400 }}>Her gün için detaylar</h2>
-      <p style={{ color: 'var(--ink-60)', marginBottom: 30 }}>Kime, nereye, hangi konseptle gideceğini belirle.</p>
+      <p style={{ color: 'var(--ink-60)', marginBottom: 30 }}>Kime, nereye ve saat kaçta gideceğini belirle.</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         {days.map((d, i) => (
@@ -231,19 +224,6 @@ export function B2CStep2({ days, updateDay, onBack, onNext }: { days: Day[]; upd
                 <Input value={d.address} onChange={(e: any) => updateDay(d.id, { address: e.target.value })} placeholder="Mahalle, sokak, no, daire, ilçe" />
                 <FieldError msg={showErrors ? errors[d.id].address : undefined} />
               </Field>
-              <Field label="Konsept / Stil" span={2}>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {concepts.map(c => (
-                    <button key={c} type="button" onClick={() => updateDay(d.id, { concept: c })} style={{
-                      padding: '8px 16px', borderRadius: 999, fontSize: 12.5,
-                      background: d.concept === c ? 'var(--accent)' : 'transparent',
-                      color: d.concept === c ? '#fff' : 'var(--ink)',
-                      border: `1px solid ${d.concept === c ? 'var(--accent)' : 'var(--line)'}`,
-                      cursor: 'pointer', letterSpacing: '0.05em',
-                    }}>{c}</button>
-                  ))}
-                </div>
-              </Field>
               <Field label="Kart Notu" span={2}>
                 <TextArea value={d.note} onChange={(e: any) => updateDay(d.id, { note: e.target.value })} placeholder="Çiçekle birlikte gidecek mesaj (maks 200 karakter)" rows={2} maxLength={200} />
               </Field>
@@ -261,24 +241,67 @@ export function B2CStep2({ days, updateDay, onBack, onNext }: { days: Day[]; upd
   );
 }
 
-export function B2CStep3({ packages, days, updateDay, onBack, onNext }: { packages: B2CPackage[] | null; days: Day[]; updateDay: (id: number, patch: Partial<Day>) => void; onBack: () => void; onNext: () => void }) {
+export function B2CStep3({ packages, concepts, days, updateDay, onBack, onNext }: { packages: B2CPackage[] | null; concepts: B2CConcept[] | null; days: Day[]; updateDay: (id: number, patch: Partial<Day>) => void; onBack: () => void; onNext: () => void }) {
+  const [showErrors, setShowErrors] = useState(false);
+  const ready = !!packages && !!concepts && packages.length > 0 && concepts.length > 0;
+  const valid = {
+    conceptIds: (concepts || []).map(c => c.id),
+    packageIds: (packages || []).map(p => p.id),
+    flowerTypeIds: FLOWER_TYPES.map(f => f.id),
+    customId: CUSTOM_FLOWER_TYPE,
+  };
+  const errors = Object.fromEntries(days.map(d => [d.id, dayStep3Errors(d, valid)]));
+  const hasErrors = Object.values(errors).some(e => Object.keys(e).length > 0);
+  const next = () => {
+    if (hasErrors) { setShowErrors(true); return; }
+    onNext();
+  };
+  const err = (id: number, k: string) => (showErrors ? errors[id][k] : undefined);
+  const sub = { fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase' as const, color: 'var(--accent)', margin: '26px 0 12px' };
+
   return (
     <div>
-      <h2 className="serif" style={{ fontSize: 30, marginBottom: 10, fontWeight: 400 }}>Her gün için paket seç</h2>
-      <p style={{ color: 'var(--ink-60)', marginBottom: 30 }}>Her özel gününe farklı bir paket atayabilirsin.</p>
+      <h2 className="serif" style={{ fontSize: 30, marginBottom: 10, fontWeight: 400 }}>Her gün için tasarımı seç</h2>
+      <p style={{ color: 'var(--ink-60)', marginBottom: 30 }}>Önce konsepti, sonra tasarım ölçeğini ve çiçek türünü seç. Konsept fiyatı değiştirmez; fiyatı ölçek belirler.</p>
 
-      {packages === null && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-60)' }}>Paketler yükleniyor…</div>}
-      {packages?.length === 0 && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-60)' }}>Şu anda tanımlı paket bulunmuyor.</div>}
+      {(packages === null || concepts === null) && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-60)' }}>Yükleniyor…</div>}
+      {packages !== null && concepts !== null && !ready && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-60)' }}>Şu anda seçilebilir tasarım bulunmuyor.</div>}
 
-      {packages && packages.length > 0 && days.map((d, idx) => (
+      {ready && days.map((d, idx) => (
         <div key={d.id} style={{ marginBottom: 40, paddingBottom: 30, borderBottom: idx < days.length - 1 ? '1px solid var(--line)' : 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 6 }}>
             <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
               {idx + 1}
             </div>
-            <div className="serif" style={{ fontSize: 22 }}>{d.name || '(Adsız)'} · <span style={{ fontSize: 14, color: 'var(--ink-40)', letterSpacing: '0.1em' }}>{d.date}</span></div>
+            <div className="serif" style={{ fontSize: 22 }}>{d.name || '(Adsız)'} · <span style={{ fontSize: 14, color: 'var(--ink-40)', letterSpacing: '0.1em' }}>{d.date ? formatTr(d.date) : ''}</span></div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+
+          <div style={sub}>1 · Konseptini seç</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+            {concepts!.map(c => {
+              const sel = d.concept === c.id;
+              return (
+                <button key={c.id} type="button" onClick={() => updateDay(d.id, { concept: c.id })} style={{
+                  padding: 0, textAlign: 'left', background: 'var(--paper-warm)', cursor: 'pointer', overflow: 'hidden',
+                  border: `2px solid ${sel ? 'var(--accent)' : 'transparent'}`, outline: sel ? 'none' : '1px solid var(--line)', position: 'relative',
+                }}>
+                  {c.imageUrl
+                    ? <img src={c.imageUrl} alt={c.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
+                    : <div style={{ aspectRatio: '4/3', background: 'var(--accent-soft)' }} />}
+                  {sel && <span style={{ position: 'absolute', top: 10, right: 10, width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icons.Check size={15} /></span>}
+                  <div style={{ padding: '14px 16px 16px' }}>
+                    <div className="serif" style={{ fontSize: 22, letterSpacing: '0.04em' }}>{c.name.toLocaleUpperCase('tr-TR')}</div>
+                    {c.tagline && <div style={{ fontSize: 12.5, color: 'var(--accent)', marginTop: 4 }}>{c.tagline}</div>}
+                    {c.desc && <div style={{ fontSize: 12.5, color: 'var(--ink-60)', marginTop: 4 }}>{c.desc}</div>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <FieldError msg={err(d.id, 'concept')} />
+
+          <div style={sub}>2 · Tasarım ölçeğini seç</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
             {packages!.map(p => {
               const selected = d.package === p.id;
               return (
@@ -287,8 +310,7 @@ export function B2CStep3({ packages, days, updateDay, onBack, onNext }: { packag
                   background: selected ? 'var(--accent)' : 'var(--paper-warm)',
                   color: selected ? '#fff' : 'var(--ink)',
                   border: `1px solid ${selected ? 'var(--accent)' : 'var(--line)'}`,
-                  cursor: 'pointer', transition: 'all 0.2s',
-                  position: 'relative',
+                  cursor: 'pointer', transition: 'all 0.2s', position: 'relative',
                 }}>
                   {selected && <div style={{ position: 'absolute', top: 16, right: 16 }}><Icons.Check size={18} /></div>}
                   <div className="serif" style={{ fontSize: 26 }}>{p.name}</div>
@@ -305,18 +327,48 @@ export function B2CStep3({ packages, days, updateDay, onBack, onNext }: { packag
               );
             })}
           </div>
+          <FieldError msg={err(d.id, 'package')} />
+
+          <div style={sub}>3 · Çiçek türünü seç</div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {FLOWER_TYPES.map(f => {
+              const sel = d.flowerType === f.id;
+              return (
+                <button key={f.id} type="button" onClick={() => updateDay(d.id, { flowerType: f.id })} style={{
+                  padding: '12px 18px', textAlign: 'left', cursor: 'pointer', minWidth: 190,
+                  background: sel ? 'var(--accent)' : 'transparent', color: sel ? '#fff' : 'var(--ink)',
+                  border: `1px solid ${sel ? 'var(--accent)' : 'var(--line)'}`,
+                }}>
+                  <div style={{ fontSize: 14, fontWeight: 500 }}>{f.name}</div>
+                  <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>{f.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+          <FieldError msg={err(d.id, 'flowerType')} />
+          {d.flowerType === CUSTOM_FLOWER_TYPE && (
+            <div style={{ marginTop: 14 }}>
+              <Field label="Hayalinizdeki tasarımı kısaca anlatın" required>
+                <TextArea value={d.designNote} rows={3} maxLength={500}
+                  onChange={(e: any) => updateDay(d.id, { designNote: e.target.value })}
+                  placeholder={`Örn: Beyaz ve pudra tonlarında, şakayık ağırlıklı, alçak bir masa aranjmanı (en az ${CUSTOM_DESIGN_MIN} karakter)`} />
+                <FieldError msg={err(d.id, 'designNote')} />
+              </Field>
+            </div>
+          )}
         </div>
       ))}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
         <Button variant="ghost" onClick={onBack} icon={<Icons.ArrowLeft size={14} />}>Geri</Button>
-        <Button variant="primary" size="lg" onClick={onNext} disabled={!packages || packages.length === 0} iconRight={<Icons.Arrow size={14} />}>Özete Geç</Button>
+        <Button variant="primary" size="lg" onClick={next} disabled={!ready} iconRight={<Icons.Arrow size={14} />}>Özete Geç</Button>
       </div>
+      <StepErrorNote show={showErrors && hasErrors} />
     </div>
   );
 }
 
-export function B2CStep4({ packages, days, total, onBack, onConfirm }: { packages: B2CPackage[]; days: Day[]; total: number; onBack: () => void; onConfirm: () => void }) {
+export function B2CStep4({ packages, concepts, days, total, onBack, onConfirm }: { packages: B2CPackage[]; concepts: B2CConcept[]; days: Day[]; total: number; onBack: () => void; onConfirm: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [buyer, setBuyer] = useState({ name: '', email: '', phone: '' });
@@ -380,7 +432,7 @@ export function B2CStep4({ packages, days, total, onBack, onConfirm }: { package
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 500 }}>{d.name || '(Adsız)'}</div>
                     <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 2 }}>
-                      {d.recipient || '—'} · {d.time} · {d.concept}
+                      {d.recipient || '—'} · {d.time} · {concepts.find(c => c.id === d.concept)?.name || '—'} · {FLOWER_TYPES.find(f => f.id === d.flowerType)?.name || '—'}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>

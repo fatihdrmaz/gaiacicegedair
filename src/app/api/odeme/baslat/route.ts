@@ -3,8 +3,9 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { initCheckoutForm, iyzicoConfigured, clientIp } from "@/lib/iyzico";
-import { loadPackages } from "@/lib/b2c-packages-server";
-import { dayStep1Errors, dayStep2Errors } from "@/lib/b2c-rules";
+import { loadConcepts, loadPackages } from "@/lib/b2c-packages-server";
+import { CUSTOM_FLOWER_TYPE, FLOWER_TYPES } from "@/lib/b2c-packages";
+import { dayStep1Errors, dayStep2Errors, dayStep3Errors } from "@/lib/b2c-rules";
 
 const daySchema = z.object({
   name: z.string().optional().default(""),
@@ -16,6 +17,8 @@ const daySchema = z.object({
   note: z.string().optional().default(""),
   concept: z.string().optional().default(""),
   package: z.string().min(1, "Paket seçilmeli"),
+  flowerType: z.string().optional().default(""),
+  designNote: z.string().max(500).optional().default(""),
 });
 
 const schema = z.object({
@@ -44,20 +47,28 @@ export async function POST(req: Request) {
   }
   const { days, buyer } = parsed.data;
 
+  const [pkgList, conceptList] = await Promise.all([loadPackages(), loadConcepts()]);
+  const valid = {
+    conceptIds: conceptList.map((c) => c.id),
+    packageIds: pkgList.map((p) => p.id),
+    flowerTypeIds: FLOWER_TYPES.map((f) => f.id),
+    customId: CUSTOM_FLOWER_TYPE,
+  };
   for (const [i, d] of days.entries()) {
-    const msg = Object.values({ ...dayStep1Errors(d), ...dayStep2Errors(d) })[0];
+    const msg = Object.values({ ...dayStep1Errors(d), ...dayStep2Errors(d), ...dayStep3Errors(d, valid) })[0];
     if (msg) return NextResponse.json({ error: `${i + 1}. özel gün: ${msg}` }, { status: 422 });
   }
 
   // Fiyatlar sunucuda hesaplanır — istemciden gelen total'a güvenilmez.
-  const packages = new Map((await loadPackages()).map((p) => [p.id, p]));
-  if (days.some((d) => !packages.has(d.package))) {
-    return NextResponse.json({ error: "Seçilen paket artık mevcut değil, lütfen paketi yeniden seçin." }, { status: 422 });
-  }
+  const packages = new Map(pkgList.map((p) => [p.id, p]));
+  const concepts = new Map(conceptList.map((c) => [c.id, c]));
   const items = days.map((d) => ({
     ...d,
     packageName: packages.get(d.package)!.name,
     price: packages.get(d.package)!.price,
+    conceptName: concepts.get(d.concept)!.name,
+    flowerTypeName: FLOWER_TYPES.find((f) => f.id === d.flowerType)!.name,
+    designNote: d.flowerType === CUSTOM_FLOWER_TYPE ? d.designNote.trim() : "",
   }));
   const total = items.reduce((s, it) => s + it.price, 0);
 
@@ -96,22 +107,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Sipariş oluşturulamadı" }, { status: 500 });
   }
 
-  const { data: itemRows, error: itemsErr } = await admin.from("b2c_order_items").insert(
-    items.map((it) => ({
-      order_id: order.id,
-      day_name: it.name || null,
-      occasion: it.occasion || null,
-      event_date: it.date || null,
-      recipient: it.recipient || null,
-      address: it.address || null,
-      delivery_time: it.time || "10:00",
-      concept: it.concept || null,
-      note: it.note || null,
-      package: it.packageName,
-      package_price: it.price,
-      status: "pending",
-    })),
-  ).select("id");
+  const rowFor = (it: (typeof items)[number], withNewColumns: boolean) => ({
+    order_id: order.id,
+    day_name: it.name || null,
+    occasion: it.occasion || null,
+    event_date: it.date || null,
+    recipient: it.recipient || null,
+    address: it.address || null,
+    delivery_time: it.time || "10:00",
+    note: it.note || null,
+    package: it.packageName,
+    package_price: it.price,
+    status: "pending",
+    ...(withNewColumns
+      ? { concept: it.conceptName, flower_type: it.flowerTypeName, design_note: it.designNote || null }
+      // migration 020 öncesi: çiçek türü ve tasarım isteği konsept alanında saklanır
+      : { concept: [it.conceptName, it.flowerTypeName, it.designNote].filter(Boolean).join(" · ") }),
+  });
+  let { data: itemRows, error: itemsErr } = await admin
+    .from("b2c_order_items")
+    .insert(items.map((it) => rowFor(it, true)))
+    .select("id");
+  if (itemsErr && /flower_type|design_note/.test(itemsErr.message)) {
+    ({ data: itemRows, error: itemsErr } = await admin
+      .from("b2c_order_items")
+      .insert(items.map((it) => rowFor(it, false)))
+      .select("id"));
+  }
 
   if (itemsErr || !itemRows || itemRows.length !== items.length) {
     console.error("[odeme/baslat] satır hatası:", itemsErr);

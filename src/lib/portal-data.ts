@@ -84,6 +84,8 @@ export type B2COrderItem = {
   note: string;
   package: string;
   packagePrice: number;
+  flowerType: string;
+  designNote: string;
   status: string;
 };
 

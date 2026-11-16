@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PortalCard, PortalButton, PortalInput, PortalTextarea, fmtTL } from '@/components/portal/ui';
 import { Icons } from '@/components/shared/icons';
-import type { B2CPackage } from '@/lib/b2c-packages';
+import type { B2CConcept, B2CPackage } from '@/lib/b2c-packages';
+import { createClient } from '@/lib/supabase/client';
 
 type Form = { name: string; price: string; description: string; items: string; sortOrder: string };
 
@@ -22,7 +23,7 @@ function toPayload(f: Form) {
 function PackageFields({ form, setForm }: { form: Form; setForm: (fn: (f: Form) => Form) => void }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16 }} className="pkg-form">
-      <PortalInput label="Paket adı" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Örn: Orta" />
+      <PortalInput label="Ölçek adı" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Örn: Seçkin" />
       <PortalInput label="Fiyat (₺, KDV dahil)" type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="0" />
       <PortalInput label="Sıra" type="number" value={form.sortOrder} onChange={e => setForm(f => ({ ...f, sortOrder: e.target.value }))} placeholder="0" />
       <div style={{ gridColumn: '1 / -1' }}>
@@ -93,24 +94,25 @@ export function PortalAdminB2CPackages() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginTop: 10 }}>Tasarım Ölçekleri</h2>
       <p style={{ color: 'var(--ink-60)', fontSize: 14 }}>
-        Özel Günlerim sayfasında müşterilerin seçtiği paketler. Fiyat değişikliği yeni siparişlere hemen yansır;
-        geçmiş siparişler verildikleri fiyatla kalır. Pasif paketler sitede görünmez.
+        Özel Günlerim'de fiyatı belirleyen tek seçim ölçektir (ör. Zarif, Seçkin, İhtişamlı). Fiyat değişikliği yeni
+        siparişlere hemen yansır; geçmiş siparişler verildikleri fiyatla kalır. Pasif ölçekler sitede görünmez.
       </p>
       {error && <div style={{ padding: '10px 14px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 13 }}>{error}</div>}
 
       <PortalCard padding={24}>
-        <h3 className="serif" style={{ fontSize: 18, fontWeight: 500, marginBottom: 16 }}>Yeni Paket</h3>
+        <h3 className="serif" style={{ fontSize: 18, fontWeight: 500, marginBottom: 16 }}>Yeni Ölçek</h3>
         <PackageFields form={form} setForm={setForm} />
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
           <PortalButton variant="primary" onClick={add} disabled={busy === 'new'}>
-            {busy === 'new' ? 'Ekleniyor…' : 'Paket Ekle'}
+            {busy === 'new' ? 'Ekleniyor…' : 'Ölçek Ekle'}
           </PortalButton>
         </div>
       </PortalCard>
 
       {packages.length === 0 && (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-60)' }}>Henüz paket yok.</div>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-60)' }}>Henüz ölçek yok.</div>
       )}
 
       {packages.map(p => (
@@ -154,6 +156,151 @@ export function PortalAdminB2CPackages() {
           )}
         </PortalCard>
       ))}
+    </div>
+  );
+}
+
+// ============ Konseptler (fiyatı değiştirmez; fotoğraf + anlatım) ============
+type ConceptForm = { name: string; tagline: string; description: string; sortOrder: string };
+const EMPTY_CONCEPT: ConceptForm = { name: '', tagline: '', description: '', sortOrder: '' };
+
+function ConceptFields({ form, setForm }: { form: ConceptForm; setForm: (fn: (f: ConceptForm) => ConceptForm) => void }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 100px', gap: 16 }} className="pkg-form">
+      <PortalInput label="Konsept adı" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Örn: Afrodit" />
+      <PortalInput label="Anahtar kelimeler" value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Örn: Aşk · Romantizm · Tutku" />
+      <PortalInput label="Sıra" type="number" value={form.sortOrder} onChange={e => setForm(f => ({ ...f, sortOrder: e.target.value }))} placeholder="0" />
+      <div style={{ gridColumn: '1 / -1' }}>
+        <PortalInput label="Kime / hangi durumlar için" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Örn: Sevgili ve eş" />
+      </div>
+    </div>
+  );
+}
+
+export function PortalAdminB2CConcepts() {
+  const [concepts, setConcepts] = useState<B2CConcept[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState<ConceptForm>(EMPTY_CONCEPT);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [edit, setEdit] = useState<ConceptForm>(EMPTY_CONCEPT);
+  const [busy, setBusy] = useState('');
+  const [error, setError] = useState('');
+
+  const load = useCallback(() => {
+    fetch('/api/admin/konsept')
+      .then(r => r.json())
+      .then(d => setConcepts(d.concepts || []))
+      .catch(() => setError('Konseptler yüklenemedi.'))
+      .finally(() => setLoading(false));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const call = async (key: string, method: string, body?: object, query = '') => {
+    setBusy(key); setError('');
+    try {
+      const res = await fetch('/api/admin/konsept' + query, {
+        method,
+        headers: body ? { 'content-type': 'application/json' } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(json.error || 'İşlem başarısız.'); return false; }
+      load();
+      return true;
+    } catch { setError('Bağlantı hatası.'); return false; } finally { setBusy(''); }
+  };
+
+  const payload = (f: ConceptForm) => ({
+    name: f.name.trim(), tagline: f.tagline.trim(), description: f.description.trim(), sortOrder: Number(f.sortOrder) || 0,
+  });
+
+  const add = async () => {
+    if (!form.name.trim()) { setError('Konsept adı gerekli.'); return; }
+    if (await call('new', 'POST', payload(form))) setForm(EMPTY_CONCEPT);
+  };
+
+  const uploadImage = async (c: B2CConcept, file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setError('Lütfen bir görsel dosyası seçin.'); return; }
+    if (file.size > 10 * 1024 * 1024) { setError('Görsel 10MB sınırını aşıyor.'); return; }
+    setBusy(c.id); setError('');
+    try {
+      const supabase = createClient();
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `konseptler/${c.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('galeri').upload(path, file, { upsert: false });
+      if (upErr) { setError('Yükleme hatası: ' + upErr.message); setBusy(''); return; }
+      const { data: pub } = supabase.storage.from('galeri').getPublicUrl(path);
+      await call(c.id, 'PATCH', { id: c.id, imageUrl: pub.publicUrl });
+    } catch { setError('Yükleme sırasında bir hata oluştu.'); setBusy(''); }
+  };
+
+  if (loading) return <div style={{ padding: 30, textAlign: 'center', color: 'var(--ink-60)' }}>Yükleniyor…</div>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h2 className="serif" style={{ fontSize: 22, fontWeight: 500 }}>Konseptler</h2>
+      <p style={{ color: 'var(--ink-60)', fontSize: 14 }}>
+        Müşterinin ilk seçtiği tasarım dili. Konsept fiyatı değiştirmez; müşteri fotoğraf ve anlatımla seçer, fiyatı
+        bir sonraki adımda ölçeğe göre görür. Her konsepte o konsepti en iyi anlatan bir fotoğraf yükleyin.
+      </p>
+      {error && <div style={{ padding: '10px 14px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 13 }}>{error}</div>}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+        {concepts.map(c => (
+          <PortalCard key={c.id} padding={0} style={{ overflow: 'hidden', opacity: c.active ? 1 : 0.6 }}>
+            {c.imageUrl
+              ? <img src={c.imageUrl} alt={c.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
+              : <div style={{ aspectRatio: '4/3', background: 'var(--paper-warm)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-40)', fontSize: 13 }}>Fotoğraf yok</div>}
+            <div style={{ padding: 16 }}>
+              {editingId === c.id ? (
+                <>
+                  <ConceptFields form={edit} setForm={setEdit} />
+                  <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <PortalButton size="sm" variant="ghost" onClick={() => setEditingId(null)} disabled={busy === c.id}>İptal</PortalButton>
+                    <PortalButton size="sm" variant="primary" disabled={busy === c.id}
+                      onClick={async () => { if (edit.name.trim() && await call(c.id, 'PATCH', { id: c.id, ...payload(edit) })) setEditingId(null); }}>
+                      {busy === c.id ? 'Kaydediliyor…' : 'Kaydet'}
+                    </PortalButton>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="serif" style={{ fontSize: 20 }}>{c.name}{!c.active && <span style={{ marginLeft: 8, fontSize: 11, color: '#995200' }}>(pasif)</span>}</div>
+                  {c.tagline && <div style={{ fontSize: 12.5, color: 'var(--accent)', marginTop: 4 }}>{c.tagline}</div>}
+                  {c.desc && <div style={{ fontSize: 12.5, color: 'var(--ink-60)', marginTop: 4 }}>{c.desc}</div>}
+                  <div style={{ marginTop: 12, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <label style={{ fontSize: 12.5, color: 'var(--accent)', cursor: 'pointer', padding: '6px 10px', border: '1px solid var(--line)', borderRadius: 6 }}>
+                      {busy === c.id ? 'Yükleniyor…' : 'Fotoğraf değiştir'}
+                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={busy === c.id}
+                        onChange={e => { uploadImage(c, e.target.files?.[0] || null); e.target.value = ''; }} />
+                    </label>
+                    <PortalButton size="sm" variant="ghost" disabled={busy === c.id}
+                      onClick={() => { setEditingId(c.id); setEdit({ name: c.name, tagline: c.tagline, description: c.desc, sortOrder: String(c.sortOrder) }); }}>Düzenle</PortalButton>
+                    <PortalButton size="sm" variant="ghost" disabled={busy === c.id} onClick={() => call(c.id, 'PATCH', { id: c.id, active: !c.active })}>
+                      {c.active ? 'Pasifleştir' : 'Aktifleştir'}
+                    </PortalButton>
+                    <button title="Sil" disabled={busy === c.id}
+                      onClick={() => { if (window.confirm(`"${c.name}" konsepti silinsin mi? Geçmiş siparişler etkilenmez.`)) call(c.id, 'DELETE', undefined, '?id=' + encodeURIComponent(c.id)); }}
+                      style={{ padding: 6, color: 'var(--ink-60)', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                      <Icons.Trash size={15} />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </PortalCard>
+        ))}
+      </div>
+
+      <PortalCard padding={20}>
+        <h3 className="serif" style={{ fontSize: 17, fontWeight: 500, marginBottom: 14 }}>Yeni Konsept</h3>
+        <ConceptFields form={form} setForm={setForm} />
+        <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12.5, color: 'var(--ink-60)' }}>Fotoğrafı, konsepti ekledikten sonra kartından yükleyebilirsiniz.</span>
+          <PortalButton variant="primary" onClick={add} disabled={busy === 'new'}>{busy === 'new' ? 'Ekleniyor…' : 'Konsept Ekle'}</PortalButton>
+        </div>
+      </PortalCard>
     </div>
   );
 }
