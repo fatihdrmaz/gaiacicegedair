@@ -18,7 +18,6 @@ create policy "b2c_packages_public_read" on b2c_packages
   for select using (active = true);
 
 insert into b2c_packages (id, name, price, description, items, sort_order) values
-  ('mini',  'Mini',  50,   'Deneme paketi', array['Deneme siparişi'], 0),
   ('kucuk', 'Küçük', 750,  'Zarif ve anlamlı · günlük ölçekte butik buket',
     array['10-12 gövde mevsim çiçeği', 'El sarımı, kraft & saten sunum', 'Kart ve kişisel not', 'İstanbul içi teslimat'], 1),
   ('orta',  'Orta',  1500, 'Şık ve etkileyici · özenle hazırlanmış aranjman',
