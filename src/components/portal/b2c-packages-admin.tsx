@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PortalCard, PortalButton, PortalInput, PortalTextarea, fmtTL } from '@/components/portal/ui';
 import { Icons } from '@/components/shared/icons';
-import type { B2CConcept, B2CPackage } from '@/lib/b2c-packages';
+import type { B2CConcept, B2CDesign, B2CPackage } from '@/lib/b2c-packages';
 import { createClient } from '@/lib/supabase/client';
 
 type Form = { name: string; price: string; description: string; items: string; sortOrder: string };
@@ -301,6 +301,126 @@ export function PortalAdminB2CConcepts() {
           <PortalButton variant="primary" onClick={add} disabled={busy === 'new'}>{busy === 'new' ? 'Ekleniyor…' : 'Konsept Ekle'}</PortalButton>
         </div>
       </PortalCard>
+    </div>
+  );
+}
+
+// ============ Aranjman örnekleri (konsept × kesme/saksı) ============
+const DESIGN_TYPE_LABEL: Record<B2CDesign['flowerType'], string> = { kesme: 'Kesme çiçek', saksi: 'Saksı bitkisi' };
+
+export function PortalAdminB2CDesigns() {
+  const [concepts, setConcepts] = useState<B2CConcept[]>([]);
+  const [designs, setDesigns] = useState<B2CDesign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState('');
+  const [error, setError] = useState('');
+
+  const load = useCallback(() => {
+    Promise.all([
+      fetch('/api/admin/konsept').then(r => r.json()),
+      fetch('/api/admin/tasarim').then(r => r.json()),
+    ])
+      .then(([c, d]) => { setConcepts(c.concepts || []); setDesigns(d.designs || []); })
+      .catch(() => setError('Aranjman örnekleri yüklenemedi.'))
+      .finally(() => setLoading(false));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const call = async (key: string, method: string, body?: object, query = '') => {
+    setBusy(key); setError('');
+    try {
+      const res = await fetch('/api/admin/tasarim' + query, {
+        method,
+        headers: body ? { 'content-type': 'application/json' } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(json.error || 'İşlem başarısız.'); return false; }
+      return true;
+    } catch { setError('Bağlantı hatası.'); return false; } finally { setBusy(''); }
+  };
+
+  const addImages = async (c: B2CConcept, type: B2CDesign['flowerType'], files: FileList | null) => {
+    const list = Array.from(files || []);
+    if (list.length === 0) return;
+    const key = `${c.id}-${type}`;
+    setBusy(key); setError('');
+    const supabase = createClient();
+    let n = designs.filter(d => d.conceptId === c.id && d.flowerType === type).length;
+    for (const file of list) {
+      if (!file.type.startsWith('image/') || file.size > 10 * 1024 * 1024) { setError(`${file.name}: görsel olmalı ve 10MB'ı geçmemeli.`); continue; }
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `aranjmanlar/${c.id}-${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('galeri').upload(path, file, { upsert: false });
+      if (upErr) { setError('Yükleme hatası: ' + upErr.message); continue; }
+      const { data: pub } = supabase.storage.from('galeri').getPublicUrl(path);
+      n += 1;
+      const ok = await call(key, 'POST', { conceptId: c.id, flowerType: type, name: `${c.name} ${n}`, imageUrl: pub.publicUrl, sortOrder: n });
+      if (!ok) break;
+    }
+    setBusy('');
+    load();
+  };
+
+  const rename = async (d: B2CDesign, name: string) => {
+    const v = name.trim();
+    if (!v || v === d.name) return;
+    if (await call(d.id, 'PATCH', { id: d.id, name: v })) setDesigns(ds => ds.map(x => x.id === d.id ? { ...x, name: v } : x));
+  };
+
+  if (loading) return <div style={{ padding: 30, textAlign: 'center', color: 'var(--ink-60)' }}>Yükleniyor…</div>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h2 className="serif" style={{ fontSize: 22, fontWeight: 500 }}>Aranjman Örnekleri</h2>
+      <p style={{ color: 'var(--ink-60)', fontSize: 14 }}>
+        Müşteri konsepti ve çiçek türünü seçtikten sonra buradaki örneklerden birini seçer; fiyat değişmez.
+        Her konsept için Kesme çiçek ve Saksı bitkisine 3'er örnek önerilir. Örnek eklenmemiş bir seçimde müşteriden
+        örnek seçmesi istenmez. Adın üzerine tıklayıp değiştirebilirsiniz.
+      </p>
+      {error && <div style={{ padding: '10px 14px', background: '#fdeaea', color: '#9b2c2c', borderRadius: 6, fontSize: 13 }}>{error}</div>}
+
+      {concepts.map(c => (
+        <PortalCard key={c.id} padding={20} style={{ opacity: c.active ? 1 : 0.6 }}>
+          <div className="serif" style={{ fontSize: 19, marginBottom: 14 }}>
+            {c.name}{c.tagline && <span style={{ fontSize: 12.5, color: 'var(--accent)', marginLeft: 10, fontFamily: 'inherit' }}>{c.tagline}</span>}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
+            {(['kesme', 'saksi'] as const).map(type => {
+              const list = designs.filter(d => d.conceptId === c.id && d.flowerType === type);
+              const key = `${c.id}-${type}`;
+              return (
+                <div key={type}>
+                  <div style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-60)', marginBottom: 10 }}>
+                    {DESIGN_TYPE_LABEL[type]} · {list.length} örnek
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    {list.map(d => (
+                      <div key={d.id} style={{ width: 120, opacity: d.active ? 1 : 0.5 }}>
+                        <img src={d.imageUrl} alt={d.name} style={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 6, display: 'block' }} />
+                        <input defaultValue={d.name} onBlur={e => rename(d, e.target.value)}
+                          style={{ width: '100%', marginTop: 4, fontSize: 12, border: '1px solid transparent', borderRadius: 4, padding: '3px 4px', background: 'transparent' }} />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                          <button disabled={busy === d.id} onClick={async () => { if (await call(d.id, 'PATCH', { id: d.id, active: !d.active })) load(); }}
+                            style={{ background: 'none', border: 'none', color: 'var(--ink-60)', cursor: 'pointer', padding: 2 }}>{d.active ? 'Gizle' : 'Göster'}</button>
+                          <button disabled={busy === d.id} title="Sil"
+                            onClick={async () => { if (window.confirm(`"${d.name}" silinsin mi?`) && await call(d.id, 'DELETE', undefined, '?id=' + encodeURIComponent(d.id))) load(); }}
+                            style={{ background: 'none', border: 'none', color: 'var(--ink-60)', cursor: 'pointer', padding: 2 }}><Icons.Trash size={13} /></button>
+                        </div>
+                      </div>
+                    ))}
+                    <label style={{ width: 120, height: 90, borderRadius: 6, border: '1px dashed var(--accent)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', fontSize: 12, cursor: busy === key ? 'wait' : 'pointer', padding: 6 }}>
+                      {busy === key ? 'Yükleniyor…' : '+ Fotoğraf ekle'}
+                      <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={busy === key}
+                        onChange={e => { addImages(c, type, e.target.files); e.target.value = ''; }} />
+                    </label>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </PortalCard>
+      ))}
     </div>
   );
 }

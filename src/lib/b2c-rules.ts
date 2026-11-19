@@ -44,8 +44,11 @@ export function formatTr(iso: string): string {
 export const CUSTOM_DESIGN_MIN = 10;
 
 export function dayStep3Errors(
-  d: { concept: string; package: string; flowerType: string; designNote: string },
-  valid: { conceptIds: string[]; packageIds: string[]; flowerTypeIds: readonly string[]; customId: string },
+  d: { concept: string; package: string; flowerType: string; designNote: string; designId: string },
+  valid: {
+    conceptIds: string[]; packageIds: string[]; flowerTypeIds: readonly string[]; customId: string;
+    designIdsFor: (conceptId: string, flowerType: string) => string[];
+  },
 ): Record<string, string> {
   const e: Record<string, string> = {};
   if (!valid.conceptIds.includes(d.concept)) e.concept = 'Bir konsept seçin';
@@ -53,6 +56,10 @@ export function dayStep3Errors(
   if (!valid.flowerTypeIds.includes(d.flowerType)) e.flowerType = 'Çiçek türünü seçin';
   else if (d.flowerType === valid.customId && d.designNote.trim().length < CUSTOM_DESIGN_MIN) {
     e.designNote = 'Hayalinizdeki tasarımı birkaç cümleyle anlatın';
+  } else if (d.flowerType !== valid.customId) {
+    // Bu konsept × tür için örnek tanımlıysa biri seçilmeli
+    const ids = valid.designIdsFor(d.concept, d.flowerType);
+    if (ids.length > 0 && !ids.includes(d.designId)) e.designId = 'Bir aranjman örneği seçin';
   }
   return e;
 }

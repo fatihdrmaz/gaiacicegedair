@@ -886,6 +886,14 @@ export function PortalAdminB2C({ state }: { state: PortalState }) {
               <Field2 label="Konsept" value={it.concept} />
               <Field2 label="Ölçek" value={`${it.package} · ${fmtTL(it.packagePrice)}`} />
               {it.flowerType && <Field2 label="Çiçek Türü" value={it.flowerType} />}
+              {it.designOption && (
+                <Field2 label="Aranjman" value={
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    {it.designImage && <a href={it.designImage} target="_blank" rel="noopener noreferrer"><img src={it.designImage} alt="" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 4, display: 'block' }} /></a>}
+                    {it.designOption}
+                  </span>
+                } />
+              )}
               {it.designNote && <Field2 label="Tasarım İsteği" value={it.designNote} />}
               {it.note && <Field2 label="Kart Notu" value={`“${it.note}”`} />}
             </div>

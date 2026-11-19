@@ -85,3 +85,41 @@ export const FLOWER_TYPES = [
 ] as const;
 
 export const CUSTOM_FLOWER_TYPE = 'ozel';
+
+// Konsept × çiçek türü (kesme/saksı) için seçilebilir aranjman örnekleri — fiyatı değiştirmez.
+export type B2CDesign = {
+  id: string;
+  conceptId: string;
+  flowerType: 'kesme' | 'saksi';
+  name: string;
+  desc: string;
+  imageUrl: string;
+  active: boolean;
+  sortOrder: number;
+};
+
+export type B2CDesignRow = {
+  id: string;
+  concept_id: string;
+  flower_type: 'kesme' | 'saksi';
+  name: string;
+  description: string | null;
+  image_url: string;
+  active: boolean;
+  sort_order: number;
+};
+
+export function mapDesign(r: B2CDesignRow): B2CDesign {
+  return {
+    id: r.id,
+    conceptId: r.concept_id,
+    flowerType: r.flower_type,
+    name: r.name,
+    desc: r.description || '',
+    imageUrl: r.image_url,
+    active: r.active,
+    sortOrder: r.sort_order,
+  };
+}
+
+export const DESIGN_FLOWER_TYPES = ['kesme', 'saksi'] as const;

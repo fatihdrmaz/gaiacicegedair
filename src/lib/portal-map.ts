@@ -197,6 +197,8 @@ type B2CItemRow = {
   status: string | null;
   flower_type?: string | null;
   design_note?: string | null;
+  design_option?: string | null;
+  design_image?: string | null;
 };
 
 type B2COrderRow = {
@@ -233,6 +235,8 @@ export function mapB2COrder(row: B2COrderRow): B2COrder {
       packagePrice: Number(it.package_price) || 0,
       flowerType: it.flower_type || "",
       designNote: it.design_note || "",
+      designOption: it.design_option || "",
+      designImage: it.design_image || "",
       status: it.status || "pending",
     })),
   };

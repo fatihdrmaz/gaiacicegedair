@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { initCheckoutForm, iyzicoConfigured, clientIp } from "@/lib/iyzico";
-import { loadConcepts, loadPackages } from "@/lib/b2c-packages-server";
+import { loadConcepts, loadDesigns, loadPackages } from "@/lib/b2c-packages-server";
 import { CUSTOM_FLOWER_TYPE, FLOWER_TYPES } from "@/lib/b2c-packages";
 import { dayStep1Errors, dayStep2Errors, dayStep3Errors } from "@/lib/b2c-rules";
 
@@ -19,6 +19,7 @@ const daySchema = z.object({
   package: z.string().min(1, "Paket seçilmeli"),
   flowerType: z.string().optional().default(""),
   designNote: z.string().max(500).optional().default(""),
+  designId: z.string().optional().default(""),
 });
 
 const schema = z.object({
@@ -47,12 +48,15 @@ export async function POST(req: Request) {
   }
   const { days, buyer } = parsed.data;
 
-  const [pkgList, conceptList] = await Promise.all([loadPackages(), loadConcepts()]);
+  const [pkgList, conceptList, designList] = await Promise.all([loadPackages(), loadConcepts(), loadDesigns()]);
+  const designsFor = (conceptId: string, type: string) =>
+    designList.filter((x) => x.conceptId === conceptId && x.flowerType === type);
   const valid = {
     conceptIds: conceptList.map((c) => c.id),
     packageIds: pkgList.map((p) => p.id),
     flowerTypeIds: FLOWER_TYPES.map((f) => f.id),
     customId: CUSTOM_FLOWER_TYPE,
+    designIdsFor: (conceptId: string, type: string) => designsFor(conceptId, type).map((x) => x.id),
   };
   for (const [i, d] of days.entries()) {
     const msg = Object.values({ ...dayStep1Errors(d), ...dayStep2Errors(d), ...dayStep3Errors(d, valid) })[0];
@@ -69,6 +73,7 @@ export async function POST(req: Request) {
     conceptName: concepts.get(d.concept)!.name,
     flowerTypeName: FLOWER_TYPES.find((f) => f.id === d.flowerType)!.name,
     designNote: d.flowerType === CUSTOM_FLOWER_TYPE ? d.designNote.trim() : "",
+    design: d.flowerType === CUSTOM_FLOWER_TYPE ? undefined : designsFor(d.concept, d.flowerType).find((x) => x.id === d.designId),
   }));
   const total = items.reduce((s, it) => s + it.price, 0);
 
@@ -120,15 +125,21 @@ export async function POST(req: Request) {
     package_price: it.price,
     status: "pending",
     ...(withNewColumns
-      ? { concept: it.conceptName, flower_type: it.flowerTypeName, design_note: it.designNote || null }
-      // migration 020 öncesi: çiçek türü ve tasarım isteği konsept alanında saklanır
-      : { concept: [it.conceptName, it.flowerTypeName, it.designNote].filter(Boolean).join(" · ") }),
+      ? {
+          concept: it.conceptName,
+          flower_type: it.flowerTypeName,
+          design_note: it.designNote || null,
+          design_option: it.design?.name || null,
+          design_image: it.design?.imageUrl || null,
+        }
+      // yeni sütunlar yoksa (migration öncesi) seçimler konsept alanında saklanır
+      : { concept: [it.conceptName, it.flowerTypeName, it.design?.name, it.designNote].filter(Boolean).join(" · ") }),
   });
   let { data: itemRows, error: itemsErr } = await admin
     .from("b2c_order_items")
     .insert(items.map((it) => rowFor(it, true)))
     .select("id");
-  if (itemsErr && /flower_type|design_note/.test(itemsErr.message)) {
+  if (itemsErr && /flower_type|design_note|design_option|design_image/.test(itemsErr.message)) {
     ({ data: itemRows, error: itemsErr } = await admin
       .from("b2c_order_items")
       .insert(items.map((it) => rowFor(it, false)))

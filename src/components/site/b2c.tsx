@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button, Field, Input, Select, TextArea } from '@/components/ui';
 import { Icons } from '@/components/shared/icons';
-import { CUSTOM_FLOWER_TYPE, FLOWER_TYPES, type B2CConcept, type B2CPackage } from '@/lib/b2c-packages';
+import { CUSTOM_FLOWER_TYPE, FLOWER_TYPES, type B2CConcept, type B2CDesign, type B2CPackage } from '@/lib/b2c-packages';
 import { CUSTOM_DESIGN_MIN, dateBounds, dayStep1Errors, dayStep2Errors, dayStep3Errors, formatTr } from '@/lib/b2c-rules';
 
 function FieldError({ msg }: { msg?: string }) {
@@ -35,24 +35,25 @@ export const OCCASIONS = [
 type Day = {
   id: number; name: string; date: string; occasion: string;
   recipient: string; address: string; time: string; note: string;
-  concept: string; package: string; flowerType: string; designNote: string;
+  concept: string; package: string; flowerType: string; designNote: string; designId: string;
 };
 
 export function B2CPage() {
   const [step, setStep] = useState(0);
   const [days, setDays] = useState<Day[]>([
-    { id: 1, name: '', date: '', occasion: 'Doğum Günü', recipient: '',  address: '', time: '10:00', note: '', concept: '', package: '', flowerType: '', designNote: '' },
+    { id: 1, name: '', date: '', occasion: 'Doğum Günü', recipient: '',  address: '', time: '10:00', note: '', concept: '', package: '', flowerType: '', designNote: '', designId: '' },
   ]);
   const [confirmed, setConfirmed] = useState(false);
   const [paidSummary, setPaidSummary] = useState<{ total: number; days: number } | null>(null);
   const [paymentError, setPaymentError] = useState(false);
   const [packages, setPackages] = useState<B2CPackage[] | null>(null);
   const [concepts, setConcepts] = useState<B2CConcept[] | null>(null);
+  const [designs, setDesigns] = useState<B2CDesign[]>([]);
 
   useEffect(() => {
     fetch('/api/paketler')
       .then(r => r.json())
-      .then(d => { setPackages(d.packages || []); setConcepts(d.concepts || []); })
+      .then(d => { setPackages(d.packages || []); setConcepts(d.concepts || []); setDesigns(d.designs || []); })
       .catch(() => { setPackages([]); setConcepts([]); });
   }, []);
 
@@ -71,7 +72,7 @@ export function B2CPage() {
 
   const addDay = () => setDays(ds => [...ds, {
     id: Date.now(), name: '', date: '', occasion: 'Doğum Günü',
-    recipient: '', address: '', time: '10:00', note: '', concept: '', package: '', flowerType: '', designNote: '',
+    recipient: '', address: '', time: '10:00', note: '', concept: '', package: '', flowerType: '', designNote: '', designId: '',
   }]);
   const removeDay = (id: number) => setDays(ds => ds.filter(d => d.id !== id));
   const updateDay = (id: number, patch: Partial<Day>) => setDays(ds => ds.map(d => d.id === id ? { ...d, ...patch } : d));
@@ -122,8 +123,8 @@ export function B2CPage() {
         {confirmed ? <B2CConfirm total={paidSummary?.total ?? total} dayCount={paidSummary?.days ?? days.length} onReset={() => { setConfirmed(false); setPaidSummary(null); setStep(0); }} />
           : step === 0 ? <B2CStep1 days={days} addDay={addDay} removeDay={removeDay} updateDay={updateDay} onNext={() => setStep(1)} />
           : step === 1 ? <B2CStep2 days={days} updateDay={updateDay} onBack={() => setStep(0)} onNext={() => setStep(2)} />
-          : step === 2 ? <B2CStep3 packages={packages} concepts={concepts} days={days} updateDay={updateDay} onBack={() => setStep(1)} onNext={() => setStep(3)} />
-          :              <B2CStep4 packages={packages || []} concepts={concepts || []} days={days} total={total} onBack={() => setStep(2)} onConfirm={() => setConfirmed(true)} />
+          : step === 2 ? <B2CStep3 packages={packages} concepts={concepts} designs={designs} days={days} updateDay={updateDay} onBack={() => setStep(1)} onNext={() => setStep(3)} />
+          :              <B2CStep4 packages={packages || []} concepts={concepts || []} designs={designs} days={days} total={total} onBack={() => setStep(2)} onConfirm={() => setConfirmed(true)} />
         }
       </div>
     </section>
@@ -241,14 +242,16 @@ export function B2CStep2({ days, updateDay, onBack, onNext }: { days: Day[]; upd
   );
 }
 
-export function B2CStep3({ packages, concepts, days, updateDay, onBack, onNext }: { packages: B2CPackage[] | null; concepts: B2CConcept[] | null; days: Day[]; updateDay: (id: number, patch: Partial<Day>) => void; onBack: () => void; onNext: () => void }) {
+export function B2CStep3({ packages, concepts, designs, days, updateDay, onBack, onNext }: { packages: B2CPackage[] | null; concepts: B2CConcept[] | null; designs: B2CDesign[]; days: Day[]; updateDay: (id: number, patch: Partial<Day>) => void; onBack: () => void; onNext: () => void }) {
   const [showErrors, setShowErrors] = useState(false);
   const ready = !!packages && !!concepts && packages.length > 0 && concepts.length > 0;
+  const designsFor = (conceptId: string, type: string) => designs.filter(x => x.conceptId === conceptId && x.flowerType === type);
   const valid = {
     conceptIds: (concepts || []).map(c => c.id),
     packageIds: (packages || []).map(p => p.id),
     flowerTypeIds: FLOWER_TYPES.map(f => f.id),
     customId: CUSTOM_FLOWER_TYPE,
+    designIdsFor: (conceptId: string, type: string) => designsFor(conceptId, type).map(x => x.id),
   };
   const errors = Object.fromEntries(days.map(d => [d.id, dayStep3Errors(d, valid)]));
   const hasErrors = Object.values(errors).some(e => Object.keys(e).length > 0);
@@ -281,7 +284,7 @@ export function B2CStep3({ packages, concepts, days, updateDay, onBack, onNext }
             {concepts!.map(c => {
               const sel = d.concept === c.id;
               return (
-                <button key={c.id} type="button" onClick={() => updateDay(d.id, { concept: c.id })} style={{
+                <button key={c.id} type="button" onClick={() => updateDay(d.id, { concept: c.id, designId: '' })} style={{
                   padding: 0, textAlign: 'left', background: 'var(--paper-warm)', cursor: 'pointer', overflow: 'hidden',
                   border: `2px solid ${sel ? 'var(--accent)' : 'transparent'}`, outline: sel ? 'none' : '1px solid var(--line)', position: 'relative',
                 }}>
@@ -334,7 +337,7 @@ export function B2CStep3({ packages, concepts, days, updateDay, onBack, onNext }
             {FLOWER_TYPES.map(f => {
               const sel = d.flowerType === f.id;
               return (
-                <button key={f.id} type="button" onClick={() => updateDay(d.id, { flowerType: f.id })} style={{
+                <button key={f.id} type="button" onClick={() => updateDay(d.id, { flowerType: f.id, designId: '' })} style={{
                   padding: '12px 18px', textAlign: 'left', cursor: 'pointer', minWidth: 190,
                   background: sel ? 'var(--accent)' : 'transparent', color: sel ? '#fff' : 'var(--ink)',
                   border: `1px solid ${sel ? 'var(--accent)' : 'var(--line)'}`,
@@ -346,6 +349,35 @@ export function B2CStep3({ packages, concepts, days, updateDay, onBack, onNext }
             })}
           </div>
           <FieldError msg={err(d.id, 'flowerType')} />
+          {d.flowerType && d.flowerType !== CUSTOM_FLOWER_TYPE && (() => {
+            if (!d.concept) return <p style={{ marginTop: 14, fontSize: 13, color: 'var(--ink-60)' }}>Aranjman örneklerini görmek için önce bir konsept seçin.</p>;
+            const options = designsFor(d.concept, d.flowerType);
+            if (options.length === 0) return null;
+            return (
+              <div style={{ marginTop: 18 }}>
+                <div style={{ ...sub, margin: '0 0 12px' }}>4 · Aranjmanını seç</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+                  {options.map(o => {
+                    const sel = d.designId === o.id;
+                    return (
+                      <button key={o.id} type="button" onClick={() => updateDay(d.id, { designId: o.id })} style={{
+                        padding: 0, textAlign: 'left', background: 'var(--paper-warm)', cursor: 'pointer', overflow: 'hidden', position: 'relative',
+                        border: `2px solid ${sel ? 'var(--accent)' : 'transparent'}`, outline: sel ? 'none' : '1px solid var(--line)',
+                      }}>
+                        <img src={o.imageUrl} alt={o.name} style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', display: 'block' }} />
+                        {sel && <span style={{ position: 'absolute', top: 10, right: 10, width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icons.Check size={15} /></span>}
+                        <div style={{ padding: '10px 14px 12px' }}>
+                          <div style={{ fontSize: 14, fontWeight: 500 }}>{o.name}</div>
+                          {o.desc && <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 3 }}>{o.desc}</div>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <FieldError msg={err(d.id, 'designId')} />
+              </div>
+            );
+          })()}
           {d.flowerType === CUSTOM_FLOWER_TYPE && (
             <div style={{ marginTop: 14 }}>
               <Field label="Hayalinizdeki tasarımı kısaca anlatın" required>
@@ -368,7 +400,7 @@ export function B2CStep3({ packages, concepts, days, updateDay, onBack, onNext }
   );
 }
 
-export function B2CStep4({ packages, concepts, days, total, onBack, onConfirm }: { packages: B2CPackage[]; concepts: B2CConcept[]; days: Day[]; total: number; onBack: () => void; onConfirm: () => void }) {
+export function B2CStep4({ packages, concepts, designs, days, total, onBack, onConfirm }: { packages: B2CPackage[]; concepts: B2CConcept[]; designs: B2CDesign[]; days: Day[]; total: number; onBack: () => void; onConfirm: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [buyer, setBuyer] = useState({ name: '', email: '', phone: '' });
@@ -432,7 +464,7 @@ export function B2CStep4({ packages, concepts, days, total, onBack, onConfirm }:
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 500 }}>{d.name || '(Adsız)'}</div>
                     <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 2 }}>
-                      {d.recipient || '—'} · {d.time} · {concepts.find(c => c.id === d.concept)?.name || '—'} · {FLOWER_TYPES.find(f => f.id === d.flowerType)?.name || '—'}
+                      {d.recipient || '—'} · {d.time} · {concepts.find(c => c.id === d.concept)?.name || '—'} · {FLOWER_TYPES.find(f => f.id === d.flowerType)?.name || '—'}{designs.find(x => x.id === d.designId) ? ` · ${designs.find(x => x.id === d.designId)!.name}` : ''}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>

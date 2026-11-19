@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_CONCEPTS, DEFAULT_PACKAGES, mapConcept, mapPackage, type B2CConcept, type B2CPackage } from "@/lib/b2c-packages";
+import { DEFAULT_CONCEPTS, DEFAULT_PACKAGES, mapConcept, mapDesign, mapPackage, type B2CConcept, type B2CDesign, type B2CPackage } from "@/lib/b2c-packages";
 
 // Tablo henüz oluşturulmadıysa (migration 018 öncesi) varsayılan paketlere düşer.
 export async function loadPackages({ includeInactive = false } = {}): Promise<B2CPackage[]> {
@@ -25,4 +25,17 @@ export async function loadConcepts({ includeInactive = false } = {}): Promise<B2
     return includeInactive ? DEFAULT_CONCEPTS : DEFAULT_CONCEPTS.filter((c) => c.active);
   }
   return (data || []).map(mapConcept);
+}
+
+// Tablo henüz oluşturulmadıysa (migration 021 öncesi) örnek yok sayılır; müşteriden seçim istenmez.
+export async function loadDesigns({ includeInactive = false } = {}): Promise<B2CDesign[]> {
+  const admin = createAdminClient();
+  let query = admin.from("b2c_designs").select("*").order("sort_order").order("created_at");
+  if (!includeInactive) query = query.eq("active", true);
+  const { data, error } = await query;
+  if (error) {
+    console.error("[b2c-designs] tablo okunamadı:", error.message);
+    return [];
+  }
+  return (data || []).map(mapDesign);
 }
